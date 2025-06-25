@@ -1,4 +1,4 @@
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo13B0XykPMAmVOXsQ3jxnNq8ToHOUcehAxroGjSNrKwbYnsSCKrGWjv8VS00LblbZ/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcHVxzGNtlmFZPNR-ZNzh7kMvvxP5rSFhCNijJcUiHH_i8FtPuyFSGBOL0CgtU2SIeNA/exec";
 
 window.exportToSheets = async function () {
   try {
