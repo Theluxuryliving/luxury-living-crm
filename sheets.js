@@ -1,4 +1,4 @@
-const PROXY_URL = "https://api.crmlux.app/api/leads";
+const PROXY_URL = "https://script.google.com/macros/s/AKfycbxcHVxzGNtlmFZPNR-ZNzh7kMvvxP5rSFhCNijJcUiHH_i8FtPuyFSGBOL0CgtU2SIeNA/exec";
 
 window.exportToSheets = async function () {
   try {
