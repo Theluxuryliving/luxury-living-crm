@@ -1,5 +1,4 @@
-const PROXY_URL = "https://crm-sync-server.vercel.app/api/leads";
-
+const PROXY_URL = "https://lux-crm.onrender.com/api/leads";
 
 window.exportToSheets = async function () {
   try {
