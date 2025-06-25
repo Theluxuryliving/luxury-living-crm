@@ -1,4 +1,5 @@
-const PROXY_URL = "https://lux-crm-worker.pages.dev/api/leads";
+const PROXY_URL = "https://crm-sync.lux.workers.dev/api/leads";
+
 
 window.exportToSheets = async function () {
   try {
