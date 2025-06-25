@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM - Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="sheets.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stats .card { flex: 1 1 200px; background: #f9f9f9; text-align: center; }
+    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+  </style>
+</head>
+<body>
+
+<!-- CRM Navigation Bar -->
+<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
+  <strong>CRM Navigation:</strong>
+  <a href="index.html" style="margin:0 10px;">Leads</a>
+  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
+  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
+  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
+  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
+  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
+  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="#" onclick="importFromSheets()">Import</a>
+</div>
+
+<h1>CRM Dashboard</h1>
+
+<div class="stats">
+  <div class="card" id="totalDeals">Total Deals: 0</div>
+  <div class="card" id="totalRevenue">Total Revenue: Rs. 0</div>
+  <div class="card" id="totalDue">Outstanding Payments: Rs. 0</div>
+  <div class="card" id="totalReps">Active Reps: 0</div>
+</div>
+
+<div class="card">
+  <h3>Recent Deals</h3>
+  <div id="recentDeals"></div>
+</div>
+
+<div class="card">
+  <h3>Performance by Sales Rep</h3>
+  <div id="repStats"></div>
+</div>
+
+<script>
+  const dbDeals = new PouchDB('crm_deals');
+  const dbPayments = new PouchDB('crm_payments');
+  const dbLeads = new PouchDB('crm_leads');
+  const reps = ["Atif Z", "Atif A", "Talha A", "Talal Y"];
+
+  async function loadDashboard() {
+    const dealsRes = await dbDeals.allDocs({ include_docs: true });
+    const deals = dealsRes.rows.map(r => r.doc);
+
+    const paymentsRes = await dbPayments.allDocs({ include_docs: true });
+    const payments = paymentsRes.rows.map(r => r.doc);
+
+    const dueAmount = payments.filter(p => p.status === 'due' || p.status === 'overdue')
+                              .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const totalRevenue = deals.reduce((sum, d) => sum + parseFloat(d.sale_price || 0), 0);
+
+    document.getElementById('totalDeals').textContent = `Total Deals: ${deals.length}`;
+    document.getElementById('totalRevenue').textContent = `Total Revenue: Rs. ${totalRevenue.toLocaleString()}`;
+    document.getElementById('totalDue').textContent = `Outstanding Payments: Rs. ${dueAmount.toLocaleString()}`;
+
+    const repDeals = {};
+    reps.forEach(r => repDeals[r] = []);
+    deals.forEach(d => {
+      if (repDeals[d.closed_by]) {
+        repDeals[d.closed_by].push(d);
+      }
+    });
+
+    const repStats = Object.entries(repDeals).map(([rep, deals]) => {
+      const rev = deals.reduce((s, d) => s + parseFloat(d.sale_price || 0), 0);
+      return `<div><strong>${rep}</strong>: ${deals.length} deals, Rs. ${rev.toLocaleString()}</div>`;
+    }).join('');
+    document.getElementById('repStats').innerHTML = repStats;
+
+    const recent = deals.slice(-5).map(d => `
+      <div><strong>${d.lead_id}</strong> | ${d.unit_id} | Rs. ${d.sale_price}</div>
+    `).join('');
+    document.getElementById('recentDeals').innerHTML = recent;
+
+    document.getElementById('totalReps').textContent = `Active Reps: ${reps.filter(r => repDeals[r].length > 0).length}`;
+  }
+
+  loadDashboard();
+</script>
+
+</body>
+</html>

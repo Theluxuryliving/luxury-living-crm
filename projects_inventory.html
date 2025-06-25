@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM - Projects & Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="sheets.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, select, textarea { display: block; margin: 5px 0; padding: 5px; width: 100%; }
+    .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
+    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+  </style>
+</head>
+<body>
+
+<!-- CRM Navigation Bar -->
+<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
+  <strong>CRM Navigation:</strong>
+  <a href="index.html" style="margin:0 10px;">Leads</a>
+  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
+  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
+  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
+  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
+  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
+  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="#" onclick="importFromSheets()">Import</a>
+</div>
+
+<h1>Projects & Inventory</h1>
+
+<form id="projectForm">
+  <h3>Add Project</h3>
+  <input type="text" name="name" placeholder="Project Name" required />
+  <input type="text" name="location" placeholder="Location" />
+  <textarea name="description" placeholder="Description"></textarea>
+  <select name="commission_type" required>
+    <option value="percent">Commission in %</option>
+    <option value="fixed">Commission in Rupees</option>
+  </select>
+  <input type="number" name="commission" placeholder="Commission Value" required />
+  <textarea name="commission_notes" placeholder="Commission Rules (e.g., varies by floor)"></textarea>
+  <button type="submit">Add Project</button>
+</form>
+
+<form id="unitForm">
+  <h3>Add Inventory Unit</h3>
+  <select name="project_id" id="projectSelect" required></select>
+  <input type="text" name="unit_number" placeholder="Unit Number" required />
+  <input type="text" name="unit_type" placeholder="Unit Type" required />
+  <input type="text" name="size" placeholder="Size" />
+  <input type="number" name="price" placeholder="Price" required />
+  <input type="text" name="floor" placeholder="Floor (for commission variation)" />
+  <button type="submit">Add Unit</button>
+</form>
+
+<div class="card">
+  <h3>Existing Projects</h3>
+  <div id="projectsList"></div>
+</div>
+
+<script>
+  const dbProjects = new PouchDB('crm_projects');
+  const dbUnits = new PouchDB('crm_inventory');
+
+  const projectForm = document.getElementById('projectForm');
+  const unitForm = document.getElementById('unitForm');
+  const projectSelect = document.getElementById('projectSelect');
+  const projectsList = document.getElementById('projectsList');
+
+  projectForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(projectForm);
+    const doc = {};
+    formData.forEach((v, k) => doc[k] = v);
+    doc._id = new Date().toISOString();
+    doc.created_at = new Date().toISOString();
+    await dbProjects.put(doc);
+    projectForm.reset();
+    loadProjects();
+    loadProjectOptions();
+  };
+
+  unitForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(unitForm);
+    const doc = {};
+    formData.forEach((v, k) => doc[k] = v);
+    doc._id = new Date().toISOString();
+    doc.status = "available";
+    doc.updated_at = new Date().toISOString();
+    await dbUnits.put(doc);
+    unitForm.reset();
+  };
+
+  async function loadProjects() {
+    const res = await dbProjects.allDocs({ include_docs: true });
+    projectsList.innerHTML = res.rows.map(({ doc }) => `
+      <div class="card">
+        <strong>${doc.name}</strong> - ${doc.location}<br/>
+        ${doc.description}<br/>
+        Commission: ${doc.commission} ${doc.commission_type === 'percent' ? '%' : 'PKR'}<br/>
+        ${doc.commission_notes ? 'Notes: ' + doc.commission_notes : ''}
+      </div>
+    `).join('');
+  }
+
+  async function loadProjectOptions() {
+    const res = await dbProjects.allDocs({ include_docs: true });
+    projectSelect.innerHTML = res.rows.map(({ doc }) => `
+      <option value="${doc._id}">${doc.name}</option>
+    `).join('');
+  }
+
+  loadProjects();
+  loadProjectOptions();
+</script>
+
+</body>
+</html>

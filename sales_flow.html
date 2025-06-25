@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM - Sales Flow</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="sheets.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .stage { display: inline-block; vertical-align: top; width: 18%; margin-right: 1%; background: #f2f2f2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    .stage h3 { text-align: center; }
+    .lead-item { margin: 5px 0; background: white; padding: 5px; border-radius: 4px; border: 1px solid #ddd; }
+    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+  </style>
+</head>
+<body>
+
+<!-- CRM Navigation Bar -->
+<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
+  <strong>CRM Navigation:</strong>
+  <a href="index.html" style="margin:0 10px;">Leads</a>
+  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
+  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
+  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
+  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
+  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
+  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="#" onclick="importFromSheets()">Import</a>
+</div>
+
+<h1>Sales Flow Tracker</h1>
+<div id="flowContainer" style="display:flex; gap:10px;"></div>
+
+<script>
+  const dbLeads = new PouchDB('crm_leads');
+
+  async function loadSalesFlow() {
+    const result = await dbLeads.allDocs({ include_docs: true });
+    const leads = result.rows.map(r => r.doc);
+    const stages = ["new", "contacted", "interested", "matured", "closed", "lost"];
+
+    const columns = stages.map(status => {
+      const items = leads.filter(l => l.status === status).map(l => `<div class='lead-item'>${l.name}<br/><small>${l.contact_number}</small></div>`).join('');
+      return `<div class='stage'><h3>${status.toUpperCase()}</h3>${items || '<i>No leads</i>'}</div>`;
+    }).join('');
+
+    document.getElementById('flowContainer').innerHTML = columns;
+  }
+
+  loadSalesFlow();
+</script>
+
+</body>
+</html>

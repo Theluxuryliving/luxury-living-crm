@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM - Leads</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="sheets.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, select, textarea { display: block; margin: 5px 0; padding: 5px; width: 100%; }
+    .lead-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    .btn { margin: 10px 5px; padding: 10px 15px; background: #eee; border: none; cursor: pointer; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<!-- CRM Navigation Bar -->
+<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
+  <strong>CRM Navigation:</strong>
+  <a href="index.html" style="margin:0 10px;">Leads</a>
+  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
+  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
+  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
+  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
+  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
+  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="#" onclick="importFromSheets()">Import</a>
+</div>
+
+<h1>CRM - Lead Management</h1>
+
+<!-- Sync Buttons -->
+<button class="btn" onclick="exportToSheets()">🔁 Export to Google Sheets</button>
+<button class="btn" onclick="importFromSheets()">🔁 Import from Google Sheets</button>
+
+<!-- Add Lead Form -->
+<form id="leadForm">
+  <input type="text" name="name" placeholder="Client Name" required />
+  <input type="text" name="contact_number" placeholder="Contact Number" required />
+  <input type="text" name="city" placeholder="Client City" />
+  <input type="text" name="source" placeholder="Source" />
+  <input type="text" name="campaign_source" placeholder="Campaign Source" />
+  
+  <select name="requirement">
+    <option value="">Requirement</option>
+    <option>Off Plan</option><option>Ready to Move</option>
+    <option>To Rent</option><option>Selling</option><option>For Rent</option>
+  </select>
+
+  <select name="project_interest">
+    <option value="">Project Interested In</option>
+    <option>18 Park Residences</option><option>19 Pine Avenue Townhouses</option>
+    <option>Etihad Town</option><option>Royal Residencia</option><option>Union Greens</option>
+  </select>
+
+  <select name="property_type">
+    <option value="">Property Type</option>
+    <option>Townhouse</option><option>Apartment</option><option>Residential Plot</option>
+    <option>Commercial Plot</option><option>House</option><option>Shops</option>
+    <option>Plaza</option><option>Penthouse</option><option>Hotel Apartment</option>
+  </select>
+
+  <label>Budget Range (Millions)</label>
+  <input type="range" name="budget_min" min="1" max="200" step="1" value="1" oninput="minVal.innerText = this.value" />
+  <span>Min: <span id="minVal">1</span>M</span>
+  <input type="range" name="budget_max" min="1" max="200" step="1" value="200" oninput="maxVal.innerText = this.value" />
+  <span>Max: <span id="maxVal">200</span>M</span>
+
+  <select name="purchase_time">
+    <option value="">Purchase Time</option>
+    <option value="asap">ASAP</option>
+    <option value="3_months">3 Months</option>
+    <option value="6_months">6 Months</option>
+    <option value="1_year">1 Year</option>
+  </select>
+
+  <textarea name="notes" placeholder="Additional Notes"></textarea>
+
+  <select name="status">
+    <option value="new">New</option>
+    <option value="contacted">Contacted</option>
+    <option value="interested">Interested</option>
+    <option value="closed">Closed</option>
+    <option value="lost">Lost</option>
+  </select>
+
+  <button type="submit">Save Lead</button>
+</form>
+
+<!-- Display Leads -->
+<div id="leadsContainer"></div>
+
+<script>
+  const db = new PouchDB("crm_leads");
+  const currentUser = localStorage.getItem("repName") || "Unknown";
+  const isAdmin = currentUser === "Admin";
+
+  const form = document.getElementById("leadForm");
+  const container = document.getElementById("leadsContainer");
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const doc = {};
+    formData.forEach((v, k) => doc[k] = v);
+    doc._id = new Date().toISOString();
+    doc.assigned_to = currentUser;
+    doc.created_at = new Date().toISOString();
+    doc.updated_at = new Date().toISOString();
+    await db.put(doc);
+    form.reset();
+    loadLeads();
+  };
+
+  async function loadLeads() {
+    const res = await db.allDocs({ include_docs: true });
+    container.innerHTML = "<h3>Leads</h3>";
+    res.rows.forEach(({ doc }) => {
+      const div = document.createElement("div");
+      div.className = "lead-card";
+      div.innerHTML = `<b>${doc.name}</b> (${doc.contact_number})<br>
+        City: ${doc.city || '-'} | Rep: ${doc.assigned_to || '-'}<br>
+        Project: ${doc.project_interest || '-'}<br>
+        Budget: ${doc.budget_min}M - ${doc.budget_max}M<br><p>${doc.notes || ''}</p>`;
+
+      if (isAdmin) {
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "🗑 Delete";
+        delBtn.onclick = async () => {
+          if (confirm("Delete this lead?")) {
+            await db.remove(doc);
+            loadLeads();
+          }
+        };
+        div.appendChild(delBtn);
+
+        const reassign = document.createElement("select");
+        ["Atif Z", "Atif A", "Talha A", "Talal Y"].forEach(rep => {
+          const opt = document.createElement("option");
+          opt.value = rep;
+          opt.textContent = rep;
+          if (doc.assigned_to === rep) opt.selected = true;
+          reassign.appendChild(opt);
+        });
+        reassign.onchange = async (e) => {
+          doc.assigned_to = e.target.value;
+          doc.updated_at = new Date().toISOString();
+          await db.put(doc);
+          loadLeads();
+        };
+        div.appendChild(reassign);
+      }
+
+      container.appendChild(div);
+    });
+  }
+
+  loadLeads();
+</script>
+
+</body>
+</html>
