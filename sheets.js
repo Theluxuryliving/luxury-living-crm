@@ -1,4 +1,4 @@
-const PROXY_URL = "https://lux-crm-proxy.vercel.app/api/leads";
+const PROXY_URL = "https://lux-crm-worker.pages.dev/api/leads";
 
 window.exportToSheets = async function () {
   try {
