@@ -22,7 +22,7 @@ window.exportToSheets = async function () {
 
 window.importFromSheets = async function () {
   try {
-    const res = await fetch(PROXY_URL, { method: "GET" });
+    const res = await fetch(PROXY_URL);
     const { leads } = await res.json();
 
     const db = new PouchDB("crm_leads");
