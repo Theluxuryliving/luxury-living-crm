@@ -1,4 +1,5 @@
-const PROXY_URL = "https://crm-sync-server.com/api/leads";
+const PROXY_URL = "https://crm-sync-server.vercel.app/api/leads";
+
 
 window.exportToSheets = async function () {
   try {
