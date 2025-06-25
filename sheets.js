@@ -1,4 +1,4 @@
-const PROXY_URL = "https://crmbridge.com/api/leads";
+const PROXY_URL = "https://sync.theluxuryliving.net/api/leads";
 
 window.exportToSheets = async function () {
   try {
