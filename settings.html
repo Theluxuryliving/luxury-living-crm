@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+    h2 {
+      color: gold;
+      border-bottom: 1px solid gold;
+      padding-bottom: 5px;
+    }
+    .section {
+      margin-bottom: 30px;
+      border: 1px solid gold;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      padding: 8px;
+      width: 100%;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid gold;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Settings Panel</h2>
+
+  <div id="profileSection" class="section">
+    <h3>Your Profile</h3>
+    <label>Full Name: <input id="fullName" /></label>
+    <label>Date of Birth: <input type="date" id="dob" /></label>
+    <label>Contact Number: <input id="contact" /></label>
+    <label>CNIC Number: <input id="cnic" /></label>
+    <label>Address: <input id="address" /></label>
+    <label>Change PIN: <input type="password" id="newPin" maxlength="4" /></label>
+    <button onclick="saveProfile()">Save Profile</button>
+  </div>
+
+  <div id="adminPanel" class="section" style="display:none">
+    <h3>Admin / Manager Panel</h3>
+    <label>New User Name: <input id="newUserName" /></label>
+    <label>PIN: <input id="newUserPin" maxlength="4" /></label>
+    <label>Role: 
+      <select id="newUserRole">
+        <option value="sales_rep">Sales Rep</option>
+        <option value="manager">Manager</option>
+        <option value="admin">Admin</option>
+      </select>
+    </label>
+    <button onclick="addUser()">Add User</button>
+
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Change PIN</th>
+          <th>Set Role</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const db = new PouchDB('crm_users');
+    const currentUser = localStorage.getItem('repName');
+    const role = localStorage.getItem('role');
+
+    async function loadProfile() {
+      try {
+        const user = await db.get(currentUser);
+        document.getElementById('fullName').value = user.name || '';
+        document.getElementById('dob').value = user.dob || '';
+        document.getElementById('contact').value = user.contact || '';
+        document.getElementById('cnic').value = user.cnic || '';
+        document.getElementById('address').value = user.address || '';
+      } catch (err) {
+        console.error('Error loading user profile:', err);
+      }
+    }
+
+    async function saveProfile() {
+      const user = await db.get(currentUser);
+      user.name = document.getElementById('fullName').value;
+      user.dob = document.getElementById('dob').value;
+      user.contact = document.getElementById('contact').value;
+      user.cnic = document.getElementById('cnic').value;
+      user.address = document.getElementById('address').value;
+      const newPin = document.getElementById('newPin').value;
+      if (newPin) user.pin = newPin;
+      await db.put(user);
+      alert('Profile updated');
+    }
+
+    async function addUser() {
+      const name = document.getElementById('newUserName').value;
+      const pin = document.getElementById('newUserPin').value;
+      const role = document.getElementById('newUserRole').value;
+      if (!name || !pin) return alert('Name and PIN required');
+      try {
+        await db.put({ _id: name, name, pin, role });
+        loadUsers();
+        alert('User added');
+      } catch (err) {
+        alert('Error adding user');
+      }
+    }
+
+    async function loadUsers() {
+      if (role !== 'admin' && role !== 'manager') return;
+      const table = document.querySelector('#userTable tbody');
+      table.innerHTML = '';
+      const res = await db.allDocs({ include_docs: true });
+      res.rows.forEach(({ doc }) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${doc.name}</td>
+          <td>
+            <select onchange="changeRole('${doc._id}', this.value)" ${role !== 'admin' ? 'disabled' : ''}>
+              <option value="sales_rep" ${doc.role === 'sales_rep' ? 'selected' : ''}>Sales Rep</option>
+              <option value="manager" ${doc.role === 'manager' ? 'selected' : ''}>Manager</option>
+              <option value="admin" ${doc.role === 'admin' ? 'selected' : ''}>Admin</option>
+            </select>
+          </td>
+          <td><input type="password" maxlength="4" placeholder="New PIN" onchange="changePin('${doc._id}', this.value)" /></td>
+          <td><button onclick="deleteUser('${doc._id}')">Delete</button></td>
+        `;
+        table.appendChild(tr);
+      });
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete user?')) return;
+      const doc = await db.get(id);
+      await db.remove(doc);
+      loadUsers();
+    }
+
+    async function changeRole(id, newRole) {
+      const doc = await db.get(id);
+      doc.role = newRole;
+      await db.put(doc);
+    }
+
+    async function changePin(id, newPin) {
+      const doc = await db.get(id);
+      doc.pin = newPin;
+      await db.put(doc);
+    }
+
+    if (role === 'admin' || role === 'manager') {
+      document.getElementById('adminPanel').style.display = 'block';
+      loadUsers();
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>
