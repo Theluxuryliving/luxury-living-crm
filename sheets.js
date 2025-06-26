@@ -1,20 +1,15 @@
-const PROXY_URL = 'https://crm-cors-proxy.atif-zubair.workers.dev/';
+// sheets.js
 
-// 🇵🇰 Format time to Pakistan Standard Time (no seconds/millis)
+const PROXY_URL = 'https://crm-cors-proxy.atif-zubair.workers.dev/'; // 🔁 Replace with your Worker URL
+
 function getPakistanTime() {
-  const options = {
-    timeZone: 'Asia/Karachi',
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  };
-  return new Intl.DateTimeFormat('en-GB', options).format(new Date());
+  const date = new Date();
+  const offsetMs = 5 * 60 * 60 * 1000; // PKT offset
+  const pstDate = new Date(date.getTime() + offsetMs);
+  return pstDate.toISOString().replace(/T/, ' ').replace(/:\d{2}\..+/, '');
 }
 
-// ✅ EXPORT leads from PouchDB to Google Sheets via Worker
+// ✅ EXPORT: Send local leads from PouchDB to Google Sheet (via Worker)
 window.exportToSheets = async function () {
   try {
     const db = new PouchDB("crm_leads");
@@ -38,38 +33,24 @@ window.exportToSheets = async function () {
   }
 };
 
-// ✅ IMPORT leads from Google Sheets via Worker into PouchDB
+// ✅ IMPORT: Pull data from Google Sheet (via Worker) and save into PouchDB
 window.importFromSheets = async function () {
   try {
     const response = await fetch(PROXY_URL + "?action=import");
     const data = await response.json();
-
     const db = new PouchDB("crm_leads");
     const existingDocs = await db.allDocs();
     const existingIds = new Set(existingDocs.rows.map(row => row.id));
+
     const reps = ["Atif Z", "Atif A", "Talha A", "Talal Y"];
 
     for (const item of data) {
-      // Clean up undefined/missing fields
-      item.name = item.name || item.Name || "Unnamed";
-      item.contact_number = item.contact_number || item.Phone || "N/A";
-      item.city = item.city || item.City || "-";
-      item.country = item.country || item.Country || "-";
-      item.budget = item.budget || item.Budget || "-";
-      item.project_interest = item.project_interest || item.Area || "-";
-      item.property_type = item.property_type || item["Property Types"] || "-";
-      item.timeline = item.timeline || item.Timeline || "-";
-      item.status = item.status || "new";
-
       if (!item._id) item._id = new Date().toISOString();
       if (!item.created_at) item.created_at = getPakistanTime();
       item.updated_at = getPakistanTime();
-
-      // Assign agent if missing
       if (!item.assigned_to || item.assigned_to === '-') {
         item.assigned_to = reps[Math.floor(Math.random() * reps.length)];
       }
-
       try {
         if (!existingIds.has(item._id)) {
           await db.put(item);
@@ -79,7 +60,7 @@ window.importFromSheets = async function () {
           await db.put(item);
         }
       } catch (e) {
-        console.warn("⚠️ Conflict adding/updating", item._id, e);
+        console.error("Put failed for", item, e);
       }
     }
 
@@ -91,9 +72,9 @@ window.importFromSheets = async function () {
   }
 };
 
-// ⏱️ Auto import/export every 30 mins
+// 🔁 Auto-sync every 30 minutes
 setInterval(() => {
-  console.log("🔁 Auto sync started...");
+  console.log("⏱ Auto syncing with Google Sheets...");
   window.exportToSheets();
   window.importFromSheets();
 }, 30 * 60 * 1000);
