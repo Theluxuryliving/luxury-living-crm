@@ -6,9 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="sheets.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Poppins', sans-serif;
       background: #0d0d0d;
       color: #fff;
       margin: 0;
@@ -20,6 +21,7 @@
       padding: 15px;
       text-align: center;
       border-bottom: 1px solid gold;
+      box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1);
     }
 
     .navbar a {
@@ -27,6 +29,11 @@
       text-decoration: none;
       margin: 0 15px;
       font-weight: bold;
+      transition: color 0.2s ease-in-out;
+    }
+
+    .navbar a:hover {
+      color: white;
     }
 
     .form-container {
@@ -35,7 +42,7 @@
       background: #1a1a1a;
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 0 10px #333;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
     }
 
     .form-container h2 {
@@ -47,9 +54,9 @@
       width: 100%;
       padding: 12px;
       margin: 8px 0 20px;
-      border: 1px solid #ccc;
+      border: 1px solid gold;
       border-radius: 6px;
-      background: #333;
+      background: #1a1a1a;
       color: white;
       font-size: 16px;
     }
@@ -60,45 +67,42 @@
       display: block;
     }
 
-    button {
-      background-color: gold;
+    button, .btn {
+      background: linear-gradient(to right, #ffd700, #ffcc00);
       color: black;
       border: none;
-      padding: 14px 20px;
+      padding: 12px 20px;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      width: 100%;
-      font-size: 16px;
+      font-size: 15px;
+      transition: transform 0.2s;
     }
 
-    button:hover {
-      background-color: #bfa100;
-    }
-
-    .btn {
-      padding: 8px 16px;
-      background: gold;
-      color: black;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      margin: 5px;
-      border-radius: 6px;
+    button:hover, .btn:hover {
+      transform: scale(1.05);
     }
 
     .lead-card {
-      background: #222;
+      background: #1a1a1a;
       border: 1px solid gold;
-      border-radius: 8px;
-      padding: 15px;
-      margin: 15px 0;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 4px 8px rgba(255, 215, 0, 0.05);
+      transition: transform 0.2s ease;
+    }
+
+    .lead-card:hover {
+      transform: scale(1.01);
     }
 
     .badge {
-      padding: 2px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
     }
 
     .new { background: gold; color: black; }
@@ -117,12 +121,28 @@
     .filter-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
       margin: 20px;
     }
 
     .lead-actions {
       margin-top: 10px;
+    }
+
+    #searchInput {
+      padding: 12px;
+      font-size: 16px;
+      width: 300px;
+      margin-left: 20px;
+      border: 1px solid gold;
+      border-radius: 6px;
+      background: #1a1a1a;
+      color: white;
+    }
+
+    #adminActions {
+      padding: 0 20px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -137,12 +157,10 @@
     <a href="Lead_status.html">Leads Status</a>
     <a href="#" onclick="exportToSheets()">Export</a>
     <a href="#" onclick="importFromSheets()">Import</a>
-    <a href="settings.html">settings</a>
-    <a href="#" onclick="logout()">Logout</a>
   </div>
 
   <div style="padding: 20px;">
-    <input type="text" id="searchInput" placeholder="Search leads..." style="width: 300px;" />
+    <input type="text" id="searchInput" placeholder="Search leads..." />
   </div>
 
   <div class="filter-group">
@@ -155,7 +173,7 @@
     <button class="btn" onclick="clearFilters()">Clear Filters</button>
   </div>
 
-  <div id="adminActions" style="display:none; padding: 0 20px;">
+  <div id="adminActions" style="display:none;">
     <label><input type="checkbox" id="selectAllLeads" /> Select All</label>
     <button class="btn" onclick="bulkDeleteLeads()">🗑 Bulk Delete</button>
   </div>
@@ -167,12 +185,6 @@
     const currentUser = localStorage.getItem("repName") || "Unknown";
     const isAdmin = currentUser === "Admin";
     document.getElementById("adminActions").style.display = isAdmin ? 'block' : 'none';
-
-    function logout() {
-      localStorage.clear();
-      alert("You have been logged out.");
-      window.location.href = "index.html";
-    }
 
     document.getElementById("searchInput").oninput = () => loadLeads();
     document.querySelectorAll("select").forEach(select => select.onchange = loadLeads);
