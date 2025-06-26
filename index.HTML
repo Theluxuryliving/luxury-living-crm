@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WELCOME THE LUXURY LIVING CRM</title>
+  <title>CRM Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <style>
@@ -28,6 +28,8 @@
 
 <script>
   const dbUsers = new PouchDB('crm_users');
+  const dbLog = new PouchDB('crm_activity_log');
+  const dbLeads = new PouchDB('crm_leads');
 
   async function loadUsers() {
     const res = await dbUsers.allDocs({ include_docs: true });
@@ -56,6 +58,17 @@
       if (user.pin === pin || (name === 'Admin' && pin === '9731')) {
         localStorage.setItem('repName', user.name);
         localStorage.setItem('role', user.role);
+
+        await dbLog.put({
+          _id: new Date().toISOString(),
+          user: user.name,
+          role: user.role,
+          action: 'login',
+          entity: 'session',
+          summary: `Logged in as ${user.name}`,
+          timestamp: new Date().toISOString()
+        });
+
         window.location.href = 'dashboard.html';
       } else {
         errorBox.textContent = 'Incorrect PIN.';
@@ -65,7 +78,6 @@
     }
   }
 
-  // Seed users if DB is empty (for first-time setup)
   async function seedDefaultUsers() {
     const existing = await dbUsers.allDocs();
     if (existing.total_rows === 0) {
@@ -80,6 +92,32 @@
     }
   }
 
+  seedDefaultUsers().then(loadUsers);
+
+  async function autoAssignLeads(leads) {
+    const userDocs = await dbUsers.allDocs({ include_docs: true });
+    const agents = userDocs.rows.filter(row => row.doc.role === 'sales_rep').map(row => row.doc.name);
+
+    for (let lead of leads) {
+      if (!lead.assigned_to || lead.assigned_to.trim() === '') {
+        const randomAgent = agents[Math.floor(Math.random() * agents.length)];
+        lead.assigned_to = randomAgent;
+        try {
+          await dbLeads.put({ ...lead, _id: lead._id || new Date().toISOString() });
+        } catch (e) {
+          if (e.status === 409) {
+            const existing = await dbLeads.get(lead._id);
+            lead._rev = existing._rev;
+            await dbLeads.put(lead);
+          }
+        }
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
   seedDefaultUsers().then(loadUsers);
 </script>
 
