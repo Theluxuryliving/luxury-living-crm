@@ -5,101 +5,176 @@
   <title>CRM - Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="sheets.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
-    .stats { display: flex; gap: 10px; flex-wrap: wrap; }
-    .stats .card { flex: 1 1 200px; background: #f9f9f9; text-align: center; }
-    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    .dashboard-cards {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px;
+      flex-wrap: wrap;
+    }
+    .card {
+      background: #1a1a1a;
+      border: 1px solid gold;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 10px;
+      flex: 1;
+      min-width: 200px;
+      text-align: center;
+      box-shadow: 0 0 10px #333;
+    }
+    canvas { background: white; border-radius: 10px; margin: 20px auto; display: block; }
+    .chart-section {
+      padding: 20px;
+    }
+    button.download {
+      margin: 10px;
+      padding: 10px 20px;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-<div style="text-align: right; margin: 20px;">
-  <a href="form.html">
-    <button style="padding: 10px 20px; background-color: #4CAF50; color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer;">
-      ➕ Add New Client
-    </button>
-  </a>
-</div>
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+  </div>
 
-<!-- CRM Navigation Bar -->
-<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
-  <strong>CRM Navigation:</strong>
-  <a href="leads.html" style="margin:0 10px;">Leads</a>
-  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
-  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
-  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
-  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
-  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
-</div>
+  <div class="dashboard-cards" id="summaryCards"></div>
 
-<h1>CRM Dashboard</h1>
-
-<div class="stats">
-  <div class="card" id="totalDeals">Total Deals: 0</div>
-  <div class="card" id="totalRevenue">Total Revenue: Rs. 0</div>
-  <div class="card" id="totalDue">Outstanding Payments: Rs. 0</div>
-  <div class="card" id="totalReps">Active Reps: 0</div>
-</div>
-
-<div class="card">
-  <h3>Recent Deals</h3>
-  <div id="recentDeals"></div>
-</div>
-
-<div class="card">
-  <h3>Performance by Sales Rep</h3>
-  <div id="repStats"></div>
-</div>
+  <div class="chart-section">
+    <canvas id="statusChart" width="400" height="200"></canvas>
+    <canvas id="funnelChart" width="400" height="200"></canvas>
+    <canvas id="agentChart" width="400" height="200"></canvas>
+    <button class="download" onclick="downloadPDF()">Download PDF Report</button>
+  </div>
 
 <script>
-  const dbDeals = new PouchDB('crm_deals');
-  const dbPayments = new PouchDB('crm_payments');
-  const dbLeads = new PouchDB('crm_leads');
-  const reps = ["Atif Z", "Atif A", "Talha A", "Talal Y"];
+  const db = new PouchDB("crm_leads");
 
-  async function loadDashboard() {
-    const dealsRes = await dbDeals.allDocs({ include_docs: true });
-    const deals = dealsRes.rows.map(r => r.doc);
+  async function generateDashboard() {
+    const res = await db.allDocs({ include_docs: true });
+    const leads = res.rows.map(r => r.doc);
 
-    const paymentsRes = await dbPayments.allDocs({ include_docs: true });
-    const payments = paymentsRes.rows.map(r => r.doc);
+    const summary = {
+      total: leads.length,
+      closed: leads.filter(l => (l["Lead Status"] || '').toLowerCase() === "closed").length,
+      projects: [...new Set(leads.map(l => l.Area).filter(Boolean))].length,
+      agents: [...new Set(leads.map(l => l.assigned_to).filter(Boolean))].length,
+    };
 
-    const dueAmount = payments.filter(p => p.status === 'due' || p.status === 'overdue')
-                              .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-    const totalRevenue = deals.reduce((sum, d) => sum + parseFloat(d.sale_price || 0), 0);
+    document.getElementById("summaryCards").innerHTML = `
+      <div class="card"><h3>${summary.total}</h3><p>Total Leads</p></div>
+      <div class="card"><h3>${summary.closed}</h3><p>Closed Deals</p></div>
+      <div class="card"><h3>${summary.projects}</h3><p>Active Projects</p></div>
+      <div class="card"><h3>${summary.agents}</h3><p>Sales Agents</p></div>
+    `;
 
-    document.getElementById('totalDeals').textContent = `Total Deals: ${deals.length}`;
-    document.getElementById('totalRevenue').textContent = `Total Revenue: Rs. ${totalRevenue.toLocaleString()}`;
-    document.getElementById('totalDue').textContent = `Outstanding Payments: Rs. ${dueAmount.toLocaleString()}`;
-
-    const repDeals = {};
-    reps.forEach(r => repDeals[r] = []);
-    deals.forEach(d => {
-      if (repDeals[d.closed_by]) {
-        repDeals[d.closed_by].push(d);
-      }
-    });
-
-    const repStats = Object.entries(repDeals).map(([rep, deals]) => {
-      const rev = deals.reduce((s, d) => s + parseFloat(d.sale_price || 0), 0);
-      return `<div><strong>${rep}</strong>: ${deals.length} deals, Rs. ${rev.toLocaleString()}</div>`;
-    }).join('');
-    document.getElementById('repStats').innerHTML = repStats;
-
-    const recent = deals.slice(-5).map(d => `
-      <div><strong>${d.lead_id}</strong> | ${d.unit_id} | Rs. ${d.sale_price}</div>
-    `).join('');
-    document.getElementById('recentDeals').innerHTML = recent;
-
-    document.getElementById('totalReps').textContent = `Active Reps: ${reps.filter(r => repDeals[r].length > 0).length}`;
+    drawCharts(leads);
   }
 
-  loadDashboard();
-</script>
+  function drawCharts(leads) {
+    const statusCounts = {};
+    const funnel = { new: 0, contacted: 0, interested: 0, closed: 0 };
+    const agentStats = {};
 
+    const now = new Date();
+
+    leads.forEach(lead => {
+      const status = (lead["Lead Status"] || "New").toLowerCase();
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      if (funnel[status] !== undefined) funnel[status]++;
+
+      const agent = lead.assigned_to || "Unassigned";
+      agentStats[agent] = (agentStats[agent] || 0) + 1;
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(statusCounts),
+        datasets: [{
+          data: Object.values(statusCounts),
+          backgroundColor: ["gold", "#007bff", "#28a745", "#6c757d", "#dc3545"]
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
+    });
+
+    new Chart(document.getElementById('funnelChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(funnel),
+        datasets: [{
+          label: 'Leads Funnel',
+          data: Object.values(funnel),
+          backgroundColor: 'gold'
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Conversion Funnel' } } }
+    });
+
+    new Chart(document.getElementById('agentChart'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(agentStats),
+        datasets: [{
+          data: Object.values(agentStats),
+          backgroundColor: ["#e6b800", "#1a75ff", "#00cc66", "#cc0066", "#9933ff"]
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Agent Lead Distribution' } } }
+    });
+  }
+
+  async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("CRM Dashboard Report", 10, 10);
+    const charts = ["statusChart", "funnelChart", "agentChart"];
+    let y = 20;
+    for (const id of charts) {
+      const canvas = document.getElementById(id);
+      const imgData = canvas.toDataURL("image/png");
+      doc.addImage(imgData, "PNG", 10, y, 180, 90);
+      y += 100;
+    }
+    doc.save("crm_dashboard_report.pdf");
+  }
+
+  generateDashboard();
+</script>
 </body>
 </html>
