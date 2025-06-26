@@ -13,8 +13,10 @@
 
   <!-- Styles -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Poppins', sans-serif;
       background: #0d0d0d;
       color: #fff;
       margin: 0;
@@ -23,14 +25,20 @@
     .navbar {
       background: #111;
       padding: 15px;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
       border-bottom: 1px solid gold;
+      box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1);
     }
     .navbar a {
       color: gold;
       text-decoration: none;
-      margin: 0 15px;
-      font-weight: bold;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .navbar a:hover {
+      color: white;
     }
     .top-box {
       background: #222;
@@ -38,8 +46,9 @@
       padding: 15px;
       text-align: center;
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 600;
       border-bottom: 1px solid gold;
+      text-shadow: 0 0 2px gold;
     }
     .dashboard-container {
       display: flex;
@@ -51,9 +60,14 @@
     .chart-box {
       background: #1a1a1a;
       border: 1px solid gold;
-      border-radius: 10px;
+      border-radius: 15px;
       padding: 20px;
       width: 400px;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.08);
+      transition: transform 0.2s;
+    }
+    .chart-box:hover {
+      transform: scale(1.02);
     }
     .filters {
       text-align: center;
@@ -61,38 +75,63 @@
     }
     .filters input, .filters select {
       margin: 5px;
-      padding: 8px;
-      border-radius: 5px;
-      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
+      font-family: 'Poppins', sans-serif;
     }
     .download-btn {
-      background: gold;
+      background: linear-gradient(to right, #ffd700, #ffcc00);
       color: black;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 24px;
       font-weight: bold;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      margin: 10px auto;
+      margin: 15px auto;
       display: block;
+      box-shadow: 0 3px 10px rgba(255, 215, 0, 0.2);
+      transition: transform 0.2s;
+    }
+    .download-btn:hover {
+      transform: scale(1.05);
     }
     .table-container {
       width: 90%;
       margin: 20px auto;
       background: #1a1a1a;
-      padding: 15px;
-      border-radius: 10px;
+      padding: 20px;
+      border-radius: 15px;
       border: 1px solid gold;
+      box-shadow: 0 4px 10px rgba(255, 215, 0, 0.05);
+    }
+    .table-container h3 {
+      color: gold;
+      margin-bottom: 15px;
+      border-bottom: 1px solid gold;
+      padding-bottom: 5px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       color: white;
+      font-size: 15px;
     }
     th, td {
-      padding: 10px;
+      padding: 12px 10px;
       border: 1px solid gold;
       text-align: left;
+    }
+    tr:nth-child(even) {
+      background-color: #141414;
+    }
+    ol {
+      padding-left: 20px;
+    }
+    ol li {
+      margin: 5px 0;
     }
   </style>
 </head>
@@ -105,8 +144,13 @@
     <a href="Deals.html">Deals</a>
     <a href="Sales_Flow.html">Sales Flow</a>
     <a href="Lead_status.html">Leads Status</a>
-    <a href="settings.html">settings</a>
+    <a href="settings.html">⚙️ Settings</a>
     <a href="#" onclick="logout()">Logout</a>
+  </div>
+  <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
+ </body>
+</html>
+
   </div>
   <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
   <div class="filters">
