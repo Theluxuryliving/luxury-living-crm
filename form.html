@@ -1,120 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>CRM Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 40px; text-align: center; }
-    h1 { font-size: 28px; margin-bottom: 30px; text-transform: uppercase; }
-    select, input { padding: 10px; margin: 10px; width: 250px; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; font-weight: bold; cursor: pointer; background: #f2f2f2; border: 1px solid #ccc; border-radius: 6px; }
-    .error { color: red; font-weight: bold; }
-  </style>
-</head>
-<body>
+<form id="leadForm">
+  <input type="text" name="Name" placeholder="Full Name" required>
+  <input type="email" name="Email" placeholder="Email" required>
+  <input type="tel" name="Phone" placeholder="Phone Number" required>
 
-<h1>WELCOME THE LUXURY LIVING CRM</h1>
+  <select name="City" required>
+    <option value="">Select City</option>
+    <option>Lahore</option>
+    <option>Karachi</option>
+    <option>Islamabad</option>
+    <option>Rawalpindi</option>
+    <option>Peshawar</option>
+    <option>Multan</option>
+    <option>Faisalabad</option>
+    <option>Quetta</option>
+  </select>
 
-<select id="userSelect">
-  <option value="">Select Your Name</option>
-</select>
-<br/>
-<input type="password" id="pinInput" placeholder="Enter PIN" />
-<br/>
-<button onclick="loginUser()">Login</button>
-<div id="loginError" class="error"></div>
+  <select name="Country" required>
+    <option value="">Select Country</option>
+    <option>Pakistan</option>
+    <option>US</option>
+    <option>UK</option>
+    <option>Europe</option>
+    <option>Middle East</option>
+    <option>Africa</option>
+    <option>China</option>
+    <option>Japan</option>
+    <option>Asia</option>
+  </select>
 
-<script>
-  const dbUsers = new PouchDB('crm_users');
-  const dbLog = new PouchDB('crm_activity_log');
-  const dbLeads = new PouchDB('crm_leads');
+  <input type="text" name="Property Types" placeholder="e.g., Apartment, Villa" required>
 
-  async function loadUsers() {
-    const res = await dbUsers.allDocs({ include_docs: true });
-    const select = document.getElementById('userSelect');
-    res.rows.forEach(({ doc }) => {
-      const opt = document.createElement('option');
-      opt.value = doc.name;
-      opt.textContent = doc.name;
-      select.appendChild(opt);
-    });
-  }
+  <select name="Area" required>
+    <option value="">Select Area</option>
+    <option>DHA</option>
+    <option>Bahria</option>
+    <option>Canal Bank Road</option>
+    <option>Gulberg</option>
+    <option>Model Town</option>
+    <option>Garden Town</option>
+    <option>Ruda</option>
+    <option>Etihad Town</option>
+    <option>Johar Town</option>
+    <option>Valancia</option>
+    <option>LDA</option>
+    <option>Wapda Town</option>
+    <option>Others</option>
+  </select>
 
-  async function loginUser() {
-    const name = document.getElementById('userSelect').value;
-    const pin = document.getElementById('pinInput').value;
-    const errorBox = document.getElementById('loginError');
-    errorBox.textContent = '';
+  <label for="budget">Budget (in millions)</label>
+  <input type="range" name="Budget" min="1" max="100" step="1" oninput="budgetOutput.value = this.value">
+  <output id="budgetOutput">50</output> million
 
-    if (!name || !pin) {
-      errorBox.textContent = 'Please select name and enter PIN.';
-      return;
-    }
+  <select name="Property Status" required>
+    <option value="">Select Status</option>
+    <option>Ready to Move</option>
+    <option>Off-Plan</option>
+  </select>
 
-    try {
-      const user = await dbUsers.get(name);
-      if (user.pin === pin || (name === 'Admin' && pin === '9731')) {
-        localStorage.setItem('repName', user.name);
-        localStorage.setItem('role', user.role);
+  <select name="Timeline" required>
+    <option value="">Timeline to Purchase</option>
+    <option>Immediately</option>
+    <option>Within 3 months</option>
+    <option>3-6 months</option>
+    <option>6+ months</option>
+  </select>
 
-        await dbLog.put({
-          _id: new Date().toISOString(),
-          user: user.name,
-          role: user.role,
-          action: 'login',
-          entity: 'session',
-          summary: `Logged in as ${user.name}`,
-          timestamp: new Date().toISOString()
-        });
+  <input type="text" name="Lead Source" placeholder="Lead Source (e.g. Facebook, Referral)">
 
-        window.location.href = 'dashboard.html';
-      } else {
-        errorBox.textContent = 'Incorrect PIN.';
-      }
-    } catch (err) {
-      errorBox.textContent = 'User not found.';
-    }
-  }
+  <textarea name="Comments" placeholder="Additional Notes or Comments"></textarea>
 
-  async function seedDefaultUsers() {
-    const existing = await dbUsers.allDocs();
-    if (existing.total_rows === 0) {
-      const defaultUsers = [
-        { _id: 'Admin', name: 'Admin', pin: '9731', role: 'admin' },
-        { _id: 'Atif Z', name: 'Atif Z', pin: '1234', role: 'sales_rep' },
-        { _id: 'Atif A', name: 'Atif A', pin: '1234', role: 'sales_rep' },
-        { _id: 'Talha A', name: 'Talha A', pin: '1234', role: 'sales_rep' },
-        { _id: 'Talal Y', name: 'Talal Y', pin: '1234', role: 'sales_rep' }
-      ];
-      for (const u of defaultUsers) await dbUsers.put(u);
-    }
-  }
-
-  seedDefaultUsers().then(loadUsers);
-
-  async function autoAssignLeads(leads) {
-    const userDocs = await dbUsers.allDocs({ include_docs: true });
-    const agents = userDocs.rows.filter(row => row.doc.role === 'sales_rep').map(row => row.doc.name);
-
-    for (let lead of leads) {
-      if (!lead.assigned_to || lead.assigned_to.trim() === '') {
-        const randomAgent = agents[Math.floor(Math.random() * agents.length)];
-        lead.assigned_to = randomAgent;
-        try {
-          await dbLeads.put({ ...lead, _id: lead._id || new Date().toISOString() });
-        } catch (e) {
-          if (e.status === 409) {
-            const existing = await dbLeads.get(lead._id);
-            lead._rev = existing._rev;
-            await dbLeads.put(lead);
-          }
-        }
-      }
-    }
-  }
-</script>
-
-</body>
-</html>
+  <button type="submit">Submit Lead</button>
+</form>
