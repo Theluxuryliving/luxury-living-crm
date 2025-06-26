@@ -4,380 +4,208 @@
   <meta charset="UTF-8" />
   <title>CRM Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <!-- Styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
     body {
       font-family: 'Poppins', sans-serif;
       background: #0d0d0d;
-      color: #fff;
+      color: white;
       margin: 0;
-      padding: 0;
+      padding: 20px;
     }
     .navbar {
       background: #111;
       padding: 15px;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
+      text-align: center;
       border-bottom: 1px solid gold;
-      box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1);
     }
     .navbar a {
       color: gold;
       text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s;
+      margin: 0 15px;
+      font-weight: bold;
     }
-    .navbar a:hover {
-      color: white;
-    }
-    .top-box {
-      background: #222;
+    h2 {
       color: gold;
-      padding: 15px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: 600;
-      border-bottom: 1px solid gold;
-      text-shadow: 0 0 2px gold;
-    }
-    .dashboard-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      padding: 20px;
-    }
-    .chart-box {
-      background: #1a1a1a;
-      border: 1px solid gold;
-      border-radius: 15px;
-      padding: 20px;
-      width: 400px;
-      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.08);
-      transition: transform 0.2s;
-    }
-    .chart-box:hover {
-      transform: scale(1.02);
+      margin-top: 20px;
     }
     .filters {
-      text-align: center;
-      margin-top: 10px;
+      margin: 20px 0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
     }
-    .filters input, .filters select {
-      margin: 5px;
+    select, input[type="month"] {
       padding: 10px;
+      background: #1a1a1a;
+      color: white;
+      border: 1px solid gold;
       border-radius: 6px;
-      border: 1px solid gold;
-      background: #1a1a1a;
-      color: white;
-      font-family: 'Poppins', sans-serif;
     }
-    .download-btn {
-      background: linear-gradient(to right, #ffd700, #ffcc00);
-      color: black;
-      border: none;
-      padding: 12px 24px;
-      font-weight: bold;
+    .metrics {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .card {
+      background: #1a1a1a;
+      border: 1px solid gold;
       border-radius: 10px;
-      cursor: pointer;
-      margin: 15px auto;
-      display: block;
-      box-shadow: 0 3px 10px rgba(255, 215, 0, 0.2);
-      transition: transform 0.2s;
-    }
-    .download-btn:hover {
-      transform: scale(1.05);
-    }
-    .table-container {
-      width: 90%;
-      margin: 20px auto;
-      background: #1a1a1a;
       padding: 20px;
-      border-radius: 15px;
-      border: 1px solid gold;
-      box-shadow: 0 4px 10px rgba(255, 215, 0, 0.05);
+      flex: 1 1 220px;
+      min-width: 200px;
+      text-align: center;
     }
-    .table-container h3 {
+    .card h3 {
       color: gold;
-      margin-bottom: 15px;
-      border-bottom: 1px solid gold;
-      padding-bottom: 5px;
+      margin-bottom: 10px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      color: white;
-      font-size: 15px;
-    }
-    th, td {
-      padding: 12px 10px;
-      border: 1px solid gold;
-      text-align: left;
-    }
-    tr:nth-child(even) {
-      background-color: #141414;
-    }
-    ol {
-      padding-left: 20px;
-    }
-    ol li {
-      margin: 5px 0;
+    canvas {
+      margin-top: 40px;
+      background: #fff;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="leads.html">Leads</a>
-    <a href="form.html">➕ Add New Client</a>
-    <a href="Projects_inventory.html">Inventory</a>
-    <a href="Deals.html">Deals</a>
-    <a href="Sales_Flow.html">Sales Flow</a>
-    <a href="Lead_status.html">Leads Status</a>
-    <a href="settings.html">⚙️ Settings</a>
-    <a href="#" onclick="logout()">Logout</a>
-  </div>
- </body>
-</html>
 
-  </div>
-  <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
-  <div class="filters">
-    From: <input type="date" id="startDate" />
-    To: <input type="date" id="endDate" />
-    Agent: <select id="agentFilter"><option value="">All Agents</option></select>
-    <button onclick="loadDashboard()">Apply</button>
-    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
-  </div>
-  <div class="dashboard-container">
-    <div class="chart-box"><canvas id="statusChart"></canvas></div>
-    <div class="chart-box"><canvas id="conversionChart"></canvas></div>
-    <div class="chart-box"><canvas id="agentPieChart"></canvas></div>
-  </div>
-  <div class="table-container">
-    <h3>Performance Summary</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Agent</th>
-          <th>Total Leads</th>
-          <th>Contacted</th>
-          <th>Closed</th>
-          <th>Conversion %</th>
-        </tr>
-      </thead>
-      <tbody id="performanceTable"></tbody>
-    </table>
-  </div>
-  <div class="table-container">
-    <h3>Average Conversion Time</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Agent</th>
-          <th>Avg Conversion Time</th>
-        </tr>
-      </thead>
-      <tbody id="avgConversionTimeTable"></tbody>
-    </table>
-  </div>
-  <div class="table-container">
-    <h3>Top Performing Agents</h3>
-    <ol id="topAgentsList"></ol>
-  </div>
-  <script>
-    const db = new PouchDB("crm_leads");
+<div class="navbar">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="leads.html">Leads</a>
+  <a href="form.html">Add Lead</a>
+  <a href="deals.html">Deals</a>
+  <a href="projects_inventory.html">Inventory</a>
+  <a href="sales_flow.html">Sales Flow</a>
+  <a href="lead_status.html">Lead Status</a>
+</div>
 
-    function logout() {
-      localStorage.removeItem("repName");
-      window.location.href = "index.html";
-    }
+<h2>Agent & Lead Performance Summary</h2>
 
-    async function loadDashboard() {
-      const allDocs = await db.allDocs({ include_docs: true });
-      const leads = allDocs.rows.map(r => r.doc);
+<div class="filters">
+  <select id="filterAgent"><option value="">All Agents</option></select>
+  <input type="month" id="filterMonth" />
+  <button onclick="loadDashboard()">Apply</button>
+</div>
 
-      const start = document.getElementById("startDate").valueAsDate;
-      const end = document.getElementById("endDate").valueAsDate;
-      const agent = document.getElementById("agentFilter").value;
+<div class="metrics" id="summaryCards">
+  <!-- Summary cards will be injected here -->
+</div>
 
-      const filtered = leads.filter(lead => {
-        const d = new Date(lead.updated_at || lead.created_at);
-        const inDateRange = (!start || d >= start) && (!end || d <= end);
-        const matchesAgent = !agent || lead.assigned_to === agent;
-        return inDateRange && matchesAgent;
-      });
+<canvas id="weeklyChart" height="100"></canvas>
+<canvas id="monthlyLeadChart" height="100"></canvas>
+<canvas id="followupBarChart" height="100"></canvas>
+<script>
+  const dbLeads = new PouchDB('crm_leads');
+  const dbActivities = new PouchDB('crm_activities');
+  const dbUsers = new PouchDB('crm_users');
 
-      drawStatusChart(filtered);
-      drawConversionChart(filtered);
-      drawAgentPieChart(filtered);
-      updateLastSale(leads);
-      populateAgentFilter(leads);
-      populatePerformanceTable(filtered);
-      populateAvgConversionTimeTable(filtered);
-      populateTopAgents(filtered);
-    }
-
-    function updateLastSale(leads) {
-      const closed = leads.filter(l => l["Lead Status"] === "Closed");
-      if (!closed.length) return;
-      const last = closed.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
-      const days = Math.floor((Date.now() - new Date(last.updated_at)) / (1000 * 60 * 60 * 24));
-      document.getElementById("lastSaleBox").innerText = `Days since last sale: ${days}`;
-    }
-
-    function populateAgentFilter(leads) {
-      const agents = [...new Set(leads.map(l => l.assigned_to).filter(Boolean))];
-      const sel = document.getElementById("agentFilter");
-      sel.innerHTML = `<option value="">All Agents</option>` + agents.map(a => `<option>${a}</option>`).join('');
-    }
-
-    function drawStatusChart(leads) {
-      const counts = {};
-      leads.forEach(l => {
-        const s = l["Lead Status"] || "New";
-        counts[s] = (counts[s] || 0) + 1;
-      });
-
-      new Chart(document.getElementById("statusChart"), {
-        type: 'pie',
-        data: {
-          labels: Object.keys(counts),
-          datasets: [{ data: Object.values(counts), backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545'] }]
-        },
-        options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
-      });
-    }
-
-    function drawConversionChart(leads) {
-      const counts = {};
-      leads.forEach(l => {
-        const rep = l.assigned_to || "Unassigned";
-        if (!counts[rep]) counts[rep] = { total: 0, closed: 0 };
-        counts[rep].total++;
-        if (l["Lead Status"] === "Closed") counts[rep].closed++;
-      });
-      const labels = Object.keys(counts);
-      const data = labels.map(k => ((counts[k].closed / counts[k].total) * 100).toFixed(1));
-
-      new Chart(document.getElementById("conversionChart"), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{ label: '% Converted', data, backgroundColor: '#17a2b8' }]
-        },
-        options: {
-          plugins: { title: { display: true, text: 'Conversion Rate by Agent' } },
-          scales: { y: { beginAtZero: true, max: 100 } }
-        }
-      });
-    }
-
-    function drawAgentPieChart(leads) {
-      const reps = {};
-      leads.forEach(l => {
-        const rep = l.assigned_to || "Unassigned";
-        reps[rep] = (reps[rep] || 0) + 1;
-      });
-
-      new Chart(document.getElementById("agentPieChart"), {
-        type: 'pie',
-        data: {
-          labels: Object.keys(reps),
-          datasets: [{ data: Object.values(reps), backgroundColor: ['gold', '#ffc107', '#6c757d', '#007bff', '#28a745'] }]
-        },
-        options: { plugins: { title: { display: true, text: 'Leads per Agent' } } }
-      });
-    }
-
-    function populatePerformanceTable(leads) {
-      const agents = {};
-      leads.forEach(l => {
-        const a = l.assigned_to || "Unassigned";
-        if (!agents[a]) agents[a] = { total: 0, contacted: 0, closed: 0 };
-        agents[a].total++;
-        if (l["Lead Status"] === "Contacted") agents[a].contacted++;
-        if (l["Lead Status"] === "Closed") agents[a].closed++;
-      });
-      const tbody = document.getElementById("performanceTable");
-      tbody.innerHTML = Object.entries(agents).map(([agent, s]) => {
-        const conv = s.total ? ((s.closed / s.total) * 100).toFixed(1) + "%" : "0%";
-        return `<tr><td>${agent}</td><td>${s.total}</td><td>${s.contacted}</td><td>${s.closed}</td><td>${conv}</td></tr>`;
-      }).join('');
-    }
-
-    function populateAvgConversionTimeTable(leads) {
-      const agents = {};
-      leads.forEach(l => {
-        if (l["Lead Status"] === "Closed") {
-          const a = l.assigned_to || "Unassigned";
-          const days = (new Date(l.updated_at) - new Date(l.created_at)) / (1000 * 60 * 60 * 24);
-          if (!agents[a]) agents[a] = [];
-          agents[a].push(days);
-        }
-      });
-      const tbody = document.getElementById("avgConversionTimeTable");
-      tbody.innerHTML = Object.entries(agents).map(([a, daysArr]) => {
-        const avg = (daysArr.reduce((a, b) => a + b, 0) / daysArr.length).toFixed(1);
-        return `<tr><td>${a}</td><td>${avg} days</td></tr>`;
-      }).join('');
-    }
-
-    function populateTopAgents(leads) {
-      const agents = {};
-      leads.forEach(l => {
-        if (l["Lead Status"] === "Closed") {
-          const a = l.assigned_to || "Unassigned";
-          agents[a] = (agents[a] || 0) + 1;
-        }
-      });
-      const sorted = Object.entries(agents).sort((a, b) => b[1] - a[1]);
-      const list = document.getElementById("topAgentsList");
-      list.innerHTML = sorted.map(([a, c]) => `<li>${a} - ${c}</li>`).join('');
-    }
-
-    function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'pt', 'a4');
-      const padding = 20;
-      const scale = 2;
-      function renderElementToPDF(element, yOffset = 0, callback) {
-        html2canvas(element, { scale }).then(canvas => {
-          const imgData = canvas.toDataURL('image/png');
-          const imgProps = doc.getImageProperties(imgData);
-          const pdfWidth = doc.internal.pageSize.getWidth() - 2 * padding;
-          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-          doc.addImage(imgData, 'PNG', padding, yOffset + padding, pdfWidth, pdfHeight);
-          callback(pdfHeight + padding * 2);
-        });
+  async function loadAgents() {
+    const res = await dbUsers.allDocs({ include_docs: true });
+    const select = document.getElementById('filterAgent');
+    res.rows.forEach(({ doc }) => {
+      if (doc.role === 'sales_rep' || doc.role === 'manager') {
+        const opt = document.createElement('option');
+        opt.value = doc.name;
+        opt.textContent = doc.name;
+        select.appendChild(opt);
       }
-      const header = document.querySelector(".top-box");
-      const dashboard = document.querySelector(".dashboard-container");
-      const tables = document.querySelectorAll(".table-container");
-      renderElementToPDF(header, 0, (headerHeight) => {
-        renderElementToPDF(dashboard, headerHeight, () => {
-          let offset = 0;
-          tables.forEach((t, i) => {
-            if (i > 0) doc.addPage();
-            renderElementToPDF(t, 0, () => {
-              if (i === tables.length - 1) doc.save("crm_dashboard.pdf");
-            });
-          });
-        });
-      });
-    }
+    });
+  }
 
-    loadDashboard();
-  </script>
+  async function loadDashboard() {
+    const agent = document.getElementById('filterAgent').value;
+    const month = document.getElementById('filterMonth').value;
+    const selectedMonth = month ? new Date(month + "-01") : null;
+
+    const leads = (await dbLeads.allDocs({ include_docs: true })).rows.map(r => {
+      const doc = r.doc;
+      doc.status = (doc.status || doc["Lead Status"] || "new").toLowerCase();
+      doc.created_at = new Date(doc.created_at || doc._id);
+      return doc;
+    });
+
+    const activities = (await dbActivities.allDocs({ include_docs: true })).rows.map(r => r.doc);
+
+    // Filter by agent and month
+    const filteredLeads = leads.filter(l => {
+      const byAgent = !agent || l.assigned_to === agent;
+      const byMonth = !selectedMonth || (l.created_at.getMonth() === selectedMonth.getMonth() && l.created_at.getFullYear() === selectedMonth.getFullYear());
+      return byAgent && byMonth;
+    });
+
+    const filteredActivities = activities.filter(a => {
+      const ts = new Date(a.timestamp);
+      const byAgent = !agent || a.agent === agent;
+      const byMonth = !selectedMonth || (ts.getMonth() === selectedMonth.getMonth() && ts.getFullYear() === selectedMonth.getFullYear());
+      return byAgent && byMonth;
+    });
+
+    // Count status
+    const statusCounts = {};
+    const weeklyMap = {};
+    const monthlyMap = {};
+    const followupCounts = {};
+
+    filteredLeads.forEach(l => {
+      const s = l.status;
+      statusCounts[s] = (statusCounts[s] || 0) + 1;
+
+      const m = l.created_at.toISOString().slice(0, 7);
+      monthlyMap[m] = (monthlyMap[m] || 0) + 1;
+    });
+
+    filteredActivities.forEach(a => {
+      const d = new Date(a.timestamp).toISOString().slice(0, 10);
+      weeklyMap[d] = (weeklyMap[d] || 0) + 1;
+
+      followupCounts[a.agent] = (followupCounts[a.agent] || 0) + 1;
+    });
+
+    // Inject summary
+    const summary = document.getElementById('summaryCards');
+    summary.innerHTML = `
+      <div class="card"><h3>Total Leads</h3><p>${filteredLeads.length}</p></div>
+      ${Object.entries(statusCounts).map(([s, v]) => `<div class="card"><h3>${s.charAt(0).toUpperCase() + s.slice(1)}</h3><p>${v}</p></div>`).join('')}
+      <div class="card"><h3>Follow-ups</h3><p>${filteredActivities.length}</p></div>
+    `;
+
+    // Charts
+    drawChart('weeklyChart', 'line', Object.keys(weeklyMap), Object.values(weeklyMap), 'Weekly Follow-ups', 'gold');
+    drawChart('monthlyLeadChart', 'bar', Object.keys(monthlyMap), Object.values(monthlyMap), 'Monthly Leads Created', 'teal');
+    drawChart('followupBarChart', 'bar', Object.keys(followupCounts), Object.values(followupCounts), 'Follow-ups per Agent', 'orange');
+  }
+
+  function drawChart(canvasId, type, labels, data, title, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    if (window[canvasId + '_chart']) window[canvasId + '_chart'].destroy();
+    window[canvasId + '_chart'] = new Chart(ctx, {
+      type,
+      data: {
+        labels,
+        datasets: [{
+          label: title,
+          data,
+          backgroundColor: color,
+          borderColor: color,
+          fill: type === 'line' ? false : true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: title
+          }
+        }
+      }
+    });
+  }
+
+  loadAgents().then(loadDashboard);
+</script>
+
 </body>
 </html>
