@@ -2,44 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CRM - Leads Dashboard</title>
+  <title>CRM - Lead Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="sheets.js"></script>
   <style>
-    body { font-family: sans-serif; background-color: #0e0e0e; color: #fff; padding: 20px; }
-    .btn { margin: 10px 5px; padding: 10px 15px; background: gold; border: none; cursor: pointer; font-weight: bold; color: #000; border-radius: 4px; }
-    .lead-card { background: #1a1a1a; border: 1px solid gold; padding: 15px; margin: 15px 0; border-radius: 6px; }
-    a { color: gold; margin: 0 10px; text-decoration: none; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #000;
+      color: #fff;
+    }
+    a, button {
+      font-weight: bold;
+    }
+    input, select, textarea {
+      display: block;
+      margin: 5px 0;
+      padding: 5px;
+      width: 100%;
+    }
+    .lead-card {
+      border: 1px solid gold;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #111;
+    }
+    .btn {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      background: gold;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 4px;
+    }
+    nav {
+      background: #111;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid gold;
+    }
+    nav a {
+      color: gold;
+      margin: 0 10px;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
 
-<!-- Header with Add New Client -->
-<div style="text-align: right; margin: 20px;">
-  <a href="form.html">
-    <button class="btn">➕ Add New Client</button>
-  </a>
-</div>
-
-<!-- CRM Navigation -->
-<div style="background:#1e1e1e; padding:10px; margin-bottom:20px; border-bottom:1px solid gold;">
-  <strong style="color: gold">CRM Navigation:</strong>
+<nav>
+  <strong>LUX CRM</strong>
+  <a href="dashboard.html">Dashboard</a>
   <a href="leads.html">Leads</a>
+  <a href="form.html">➕ Add New Client</a>
   <a href="deals.html">Deals & Payments</a>
   <a href="projects_inventory.html">Projects & Inventory</a>
   <a href="sales_flow.html">Sales Flow</a>
   <a href="lead_status.html">Lead Status</a>
-  <a href="dashboard.html">Dashboard</a>
-</div>
+  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="#" onclick="importFromSheets()">Import</a>
+</nav>
 
-<h1 style="color:gold;">CRM - Lead Management</h1>
-
-<!-- Sync Buttons -->
+<h1>Lead Dashboard</h1>
 <button class="btn" onclick="exportToSheets()">🔁 Export to Google Sheets</button>
 <button class="btn" onclick="importFromSheets()">🔁 Import from Google Sheets</button>
 
-<!-- Display Leads -->
 <div id="leadsContainer"></div>
 
 <script>
@@ -51,60 +81,51 @@
   async function loadLeads() {
     const res = await db.allDocs({ include_docs: true });
     container.innerHTML = "<h3>Leads</h3>";
+
+    if (isAdmin) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "🗑 Bulk Delete Selected";
+      deleteBtn.className = "btn";
+      deleteBtn.onclick = async () => {
+        const checked = document.querySelectorAll(".lead-checkbox:checked");
+        if (checked.length && confirm("Delete selected leads?")) {
+          for (const box of checked) {
+            const doc = await db.get(box.dataset.id);
+            await db.remove(doc);
+          }
+          loadLeads();
+        }
+      };
+      container.appendChild(deleteBtn);
+    }
+
     res.rows.forEach(({ doc }) => {
       const div = document.createElement("div");
       div.className = "lead-card";
-      div.innerHTML = `<b>${doc.name || 'Unnamed'}</b> (${doc.Phone || '-'})<br>
-        City: ${doc.City || '-'} | Rep: ${doc.assigned_to || '-'}<br>
-        Project: ${doc.Area || '-'}<br>
-        Budget: ${doc.Budget || '-'}<br><p>${doc.Comments || ''}</p>`;
 
       if (isAdmin) {
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "🗑 Delete";
-        delBtn.className = "btn";
-        delBtn.onclick = async () => {
-          if (confirm("Delete this lead?")) {
-            await db.remove(doc);
-            loadLeads();
-          }
-        };
-        div.appendChild(delBtn);
-
-        const reassign = document.createElement("select");
-        ["Atif Z", "Atif A", "Talha A", "Talal Y"].forEach(rep => {
-          const opt = document.createElement("option");
-          opt.value = rep;
-          opt.textContent = rep;
-          if (doc.assigned_to === rep) opt.selected = true;
-          reassign.appendChild(opt);
-        });
-        reassign.className = "btn";
-        reassign.onchange = async (e) => {
-          doc.assigned_to = e.target.value;
-          doc.updated_at = new Date().toISOString();
-          await db.put(doc);
-          loadLeads();
-        };
-        div.appendChild(reassign);
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "lead-checkbox";
+        checkbox.dataset.id = doc._id;
+        div.appendChild(checkbox);
       }
+
+      div.innerHTML += `<b>${doc.name || "Unnamed"}</b> (${doc.contact_number || "N/A"})<br>
+        City: ${doc.city || '-'} | Rep: ${doc.assigned_to || '-'}<br>
+        Project: ${doc.project_interest || '-'}<br>
+        Budget: ${doc.budget_min || ''} - ${doc.budget_max || ''}<br>
+        ${doc.updated_at || ''}`;
 
       container.appendChild(div);
     });
   }
 
-  async function autoSync() {
-    try {
-      await importFromSheets();
-      await exportToSheets();
-      console.log("Auto sync completed.");
-    } catch (err) {
-      console.warn("Auto sync error:", err);
-    }
-  }
-
   loadLeads();
-  setInterval(autoSync, 1800000); // Auto sync every 30 mins
+  setInterval(() => {
+    exportToSheets();
+    importFromSheets();
+  }, 30 * 60 * 1000); // 30 minutes
 </script>
 
 </body>
