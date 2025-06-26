@@ -5,120 +5,241 @@
   <title>CRM - Projects & Inventory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <button onclick="exportToSheets()">Export</button>
-  <button onclick="importFromSheets()">Import</button>
-
-<script src="sheets.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, select, textarea { display: block; margin: 5px 0; padding: 5px; width: 100%; }
-    .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
-    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
+    .form-card, .unit-card {
+      background: #1a1a1a;
+      border: 1px solid gold;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.05);
+    }
+    h3 {
+      color: gold;
+      border-bottom: 1px solid gold;
+      padding-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
+    }
+    button {
+      background: linear-gradient(to right, #ffd700, #ffcc00);
+      color: black;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .inventory-item {
+      background: #222;
+      padding: 15px;
+      margin: 10px 0;
+      border: 1px solid gold;
+      border-radius: 8px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .available { background: green; color: white; }
+    .booked { background: orange; color: black; }
+    .sold { background: red; color: white; }
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-
-<!-- CRM Navigation Bar -->
-<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
-  <strong>CRM Navigation:</strong>
-  <a href="leads.html" style="margin:0 10px;">Leads</a>
-  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
-  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
-  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
-  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
-  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
+<div class="navbar">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="leads.html">Leads</a>
+  <a href="deals.html">Deals</a>
+  <a href="projects_inventory.html">Inventory</a>
+  <a href="sales_flow.html">Sales Flow</a>
+  <a href="lead_status.html">Lead Status</a>
+   <a href="settings.html">⚙️ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
 </div>
+<div class="container">
+  <div class="form-card">
+    <h3>Add Project</h3>
+    <form id="projectForm">
+      <input type="text" name="name" placeholder="Project Name" required />
+      <input type="text" name="location" placeholder="Location" />
+      <textarea name="description" placeholder="Description"></textarea>
+      <select name="commission_type" required>
+        <option value="percent">Commission in %</option>
+        <option value="fixed">Commission in PKR</option>
+      </select>
+      <input type="number" name="commission" placeholder="Default Commission Value" required />
+      <textarea name="commission_notes" placeholder="Commission Rules (e.g. Ground: 475k, First: 450k)"></textarea>
+      <button type="submit">Add Project</button>
+    </form>
+  </div>
 
-<h1>Projects & Inventory</h1>
+  <div class="form-card">
+    <h3>Add Inventory Unit</h3>
+    <form id="unitForm">
+      <select name="project_id" id="projectSelect" required></select>
+      <input type="text" name="unit_number" placeholder="Unit Number" required />
+      <input type="text" name="unit_type" placeholder="Unit Type (e.g., Shop, Apartment)" required />
+      <input type="text" name="floor" placeholder="Floor (e.g., Ground, First)" />
+      <input type="text" name="size" placeholder="Size (e.g., 1500 sq ft)" />
+      <input type="number" name="price" placeholder="Unit Price (PKR)" required />
+      <button type="submit">Add Unit</button>
+    </form>
+  </div>
 
-<form id="projectForm">
-  <h3>Add Project</h3>
-  <input type="text" name="name" placeholder="Project Name" required />
-  <input type="text" name="location" placeholder="Location" />
-  <textarea name="description" placeholder="Description"></textarea>
-  <select name="commission_type" required>
-    <option value="percent">Commission in %</option>
-    <option value="fixed">Commission in Rupees</option>
-  </select>
-  <input type="number" name="commission" placeholder="Commission Value" required />
-  <textarea name="commission_notes" placeholder="Commission Rules (e.g., varies by floor)"></textarea>
-  <button type="submit">Add Project</button>
-</form>
+  <div class="filters">
+    <select id="filterProject"><option value="">Filter by Project</option></select>
+    <select id="filterStatus">
+      <option value="">Filter by Status</option>
+      <option value="available">Available</option>
+      <option value="booked">Booked</option>
+      <option value="sold">Sold</option>
+    </select>
+    <input type="text" id="searchUnit" placeholder="Search by Unit #..." />
+    <button onclick="loadInventory()">Apply Filters</button>
+  </div>
 
-<form id="unitForm">
-  <h3>Add Inventory Unit</h3>
-  <select name="project_id" id="projectSelect" required></select>
-  <input type="text" name="unit_number" placeholder="Unit Number" required />
-  <input type="text" name="unit_type" placeholder="Unit Type" required />
-  <input type="text" name="size" placeholder="Size" />
-  <input type="number" name="price" placeholder="Price" required />
-  <input type="text" name="floor" placeholder="Floor (for commission variation)" />
-  <button type="submit">Add Unit</button>
-</form>
-
-<div class="card">
-  <h3>Existing Projects</h3>
-  <div id="projectsList"></div>
+  <div class="unit-card">
+    <h3>Inventory Units</h3>
+    <div id="unitList"></div>
+  </div>
 </div>
 
 <script>
   const dbProjects = new PouchDB('crm_projects');
   const dbUnits = new PouchDB('crm_inventory');
+  const isAdmin = localStorage.getItem('role') === 'admin';
 
-  const projectForm = document.getElementById('projectForm');
-  const unitForm = document.getElementById('unitForm');
-  const projectSelect = document.getElementById('projectSelect');
-  const projectsList = document.getElementById('projectsList');
-
-  projectForm.onsubmit = async (e) => {
+  document.getElementById('projectForm').onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(projectForm);
+    const formData = new FormData(e.target);
     const doc = {};
-    formData.forEach((v, k) => doc[k] = v);
+    formData.forEach((val, key) => doc[key] = val);
     doc._id = new Date().toISOString();
     doc.created_at = new Date().toISOString();
     await dbProjects.put(doc);
-    projectForm.reset();
+    e.target.reset();
     loadProjects();
     loadProjectOptions();
   };
 
-  unitForm.onsubmit = async (e) => {
+  document.getElementById('unitForm').onsubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(unitForm);
+    const formData = new FormData(e.target);
     const doc = {};
-    formData.forEach((v, k) => doc[k] = v);
+    formData.forEach((val, key) => doc[key] = val);
     doc._id = new Date().toISOString();
-    doc.status = "available";
+    doc.status = 'available';
     doc.updated_at = new Date().toISOString();
     await dbUnits.put(doc);
-    unitForm.reset();
+    e.target.reset();
+    loadInventory();
   };
 
   async function loadProjects() {
     const res = await dbProjects.allDocs({ include_docs: true });
-    projectsList.innerHTML = res.rows.map(({ doc }) => `
-      <div class="card">
-        <strong>${doc.name}</strong> - ${doc.location}<br/>
-        ${doc.description}<br/>
-        Commission: ${doc.commission} ${doc.commission_type === 'percent' ? '%' : 'PKR'}<br/>
-        ${doc.commission_notes ? 'Notes: ' + doc.commission_notes : ''}
-      </div>
-    `).join('');
+    const list = res.rows.map(r => r.doc);
+    const select = document.getElementById('filterProject');
+    select.innerHTML = `<option value="">Filter by Project</option>` + list.map(p => `<option value="${p._id}">${p.name}</option>`).join('');
   }
 
   async function loadProjectOptions() {
     const res = await dbProjects.allDocs({ include_docs: true });
-    projectSelect.innerHTML = res.rows.map(({ doc }) => `
-      <option value="${doc._id}">${doc.name}</option>
+    const list = res.rows.map(r => r.doc);
+    const select = document.getElementById('projectSelect');
+    select.innerHTML = list.map(p => `<option value="${p._id}">${p.name}</option>`).join('');
+  }
+
+  async function loadInventory() {
+    const res = await dbUnits.allDocs({ include_docs: true });
+    const list = res.rows.map(r => r.doc);
+    const unitList = document.getElementById('unitList');
+    const filterProject = document.getElementById('filterProject').value;
+    const filterStatus = document.getElementById('filterStatus').value;
+    const searchUnit = document.getElementById('searchUnit').value.toLowerCase();
+
+    unitList.innerHTML = list.filter(unit => {
+      return (!filterProject || unit.project_id === filterProject) &&
+             (!filterStatus || unit.status === filterStatus) &&
+             (!searchUnit || unit.unit_number.toLowerCase().includes(searchUnit));
+    }).map(unit => `
+      <div class="inventory-item">
+        <strong>${unit.unit_number}</strong> - ${unit.unit_type} | Floor: ${unit.floor || '-'} | ${unit.size || ''}<br/>
+        Price: PKR ${unit.price} | Status: 
+        <select onchange="updateStatus('${unit._id}', this.value)">
+          <option value="available" ${unit.status === 'available' ? 'selected' : ''}>Available</option>
+          <option value="booked" ${unit.status === 'booked' ? 'selected' : ''}>Booked</option>
+          <option value="sold" ${unit.status === 'sold' ? 'selected' : ''}>Sold</option>
+        </select>
+        ${isAdmin ? `<button onclick="deleteUnit('${unit._id}')">Delete</button>` : ''}
+      </div>
     `).join('');
+  }
+
+  async function updateStatus(id, status) {
+    const unit = await dbUnits.get(id);
+    unit.status = status;
+    unit.updated_at = new Date().toISOString();
+    await dbUnits.put(unit);
+    loadInventory();
+  }
+
+  async function deleteUnit(id) {
+    if (!confirm('Delete this unit?')) return;
+    const doc = await dbUnits.get(id);
+    await dbUnits.remove(doc);
+    loadInventory();
   }
 
   loadProjects();
   loadProjectOptions();
+  loadInventory();
 </script>
-
+<script src="sheets.js"></script>
 </body>
 </html>
