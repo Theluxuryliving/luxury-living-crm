@@ -1,132 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CRM - Lead Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>CRM Leads</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="sheets.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      background: #0c0c0c;
+      color: white;
       padding: 20px;
-      background-color: #000;
-      color: #fff;
     }
-    a, button {
-      font-weight: bold;
-    }
-    input, select, textarea {
-      display: block;
-      margin: 5px 0;
-      padding: 5px;
-      width: 100%;
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
     }
     .lead-card {
-      border: 1px solid gold;
-      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-left: 6px solid gold;
+      padding: 15px;
       margin: 10px 0;
-      background-color: #111;
+      border-radius: 6px;
     }
-    .btn {
-      margin: 10px 5px;
-      padding: 10px 15px;
-      background: gold;
-      color: black;
-      border: none;
-      cursor: pointer;
+    .lead-card h3 { margin: 0; }
+    .tag {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.8em;
       font-weight: bold;
-      border-radius: 4px;
+      margin-left: 10px;
     }
-    nav {
-      background: #111;
-      padding: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid gold;
-    }
-    nav a {
-      color: gold;
-      margin: 0 10px;
-      text-decoration: none;
-    }
+    .tag.new { background: #3a3a3a; color: gold; }
+    .tag.contacted { background: #3333aa; color: white; }
+    .tag.interested { background: #2a8f2a; color: white; }
+    .tag.closed { background: #555; color: white; }
+    .tag.lost { background: #aa3333; color: white; }
+    .note-area { width: 100%; padding: 5px; }
+    .filter-bar { margin: 10px 0; display: flex; flex-wrap: wrap; gap: 10px; }
+    .search-box { flex: 1; }
   </style>
 </head>
 <body>
-
-<nav>
-  <strong>THE LUXURY LIVING CRM</strong>
+<div class="navbar">
   <a href="dashboard.html">Dashboard</a>
   <a href="leads.html">Leads</a>
   <a href="form.html">➕ Add New Client</a>
-  <a href="deals.html">Deals & Payments</a>
-  <a href="projects_inventory.html">Projects & Inventory</a>
-  <a href="sales_flow.html">Sales Flow</a>
-  <a href="lead_status.html">Lead Status</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
+  <a href="Projects_inventory.html">Inventory</a>
+  <a href="Deals.html">Deals</a>
+  <a href="Sales_Flow.html">Sales Flow</a>
+  <a href="Lead_status.html">leads status</a>
+   <a href="#" onclick="exportToSheets()">Export</a>
   <a href="#" onclick="importFromSheets()">Import</a>
-</nav>
+</div>
 
-<h1>Lead Dashboard</h1>
-<button class="btn" onclick="exportToSheets()">🔁 Export to Google Sheets</button>
-<button class="btn" onclick="importFromSheets()">🔁 Import from Google Sheets</button>
+<h1>Lead Management</h1>
+
+<div class="filter-bar">
+  <input class="search-box" type="text" id="searchInput" placeholder="Search by name, city, area..." oninput="renderLeads()">
+  <select id="statusFilter" onchange="renderLeads()">
+    <option value="">All Statuses</option>
+    <option value="new">New</option>
+    <option value="contacted">Contacted</option>
+    <option value="interested">Interested</option>
+    <option value="closed">Closed</option>
+    <option value="lost">Lost</option>
+  </select>
+  <select id="agentFilter" onchange="renderLeads()">
+    <option value="">All Agents</option>
+    <option>Atif Z</option>
+    <option>Atif A</option>
+    <option>Talha A</option>
+    <option>Talal Y</option>
+  </select>
+</div>
+
+<div id="bulkControls" style="display:none">
+  <button onclick="deleteSelectedLeads()">🗑 Delete Selected</button>
+</div>
 
 <div id="leadsContainer"></div>
 
 <script>
-  const db = new PouchDB("crm_leads");
-  const currentUser = localStorage.getItem("repName") || "Unknown";
-  const isAdmin = currentUser === "Admin";
-  const container = document.getElementById("leadsContainer");
+const db = new PouchDB("crm_leads");
+const currentUser = localStorage.getItem("repName") || "Unknown";
+const isAdmin = currentUser === "Admin";
 
-  async function loadLeads() {
-    const res = await db.allDocs({ include_docs: true });
-    container.innerHTML = "<h3>Leads</h3>";
+async function renderLeads() {
+  const res = await db.allDocs({ include_docs: true });
+  const leads = res.rows.map(r => r.doc);
+  const container = document.getElementById("leadsContainer");
+  container.innerHTML = '';
+
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+  const agent = document.getElementById("agentFilter").value;
+
+  const selected = [];
+
+  for (const doc of leads) {
+    if (search && !JSON.stringify(doc).toLowerCase().includes(search)) continue;
+    if (status && doc.status !== status) continue;
+    if (agent && doc.assigned_to !== agent) continue;
+
+    const card = document.createElement("div");
+    card.className = "lead-card";
+
+    const displayName = doc.name || "Unnamed";
+    const phone = doc.contact_number || "N/A";
+    const updated = new Date(doc.updated_at || doc.created_at || '').toLocaleString('en-PK', { timeZone: 'Asia/Karachi', hour12: false }).replace(/:\d+$/, '');
+
+    card.innerHTML = `
+      <h3>${displayName} (${phone}) <span class="tag ${doc.status || 'new'}">${doc.status || 'new'}</span></h3>
+      <div>City: ${doc.city || '-'} | Area: ${doc.Area || '-'} | Type: ${doc["Property Types"] || '-'} | Budget: ${doc.Budget || '-'} | Timeline: ${doc.Timeline || '-'}</div>
+      <div>Agent: ${doc.assigned_to || '-'} | Updated: ${updated}</div>
+      <textarea class="note-area" placeholder="Notes...">${doc.Comments || ''}</textarea>
+      <select>
+        <option${doc.status === 'new' ? ' selected' : ''}>new</option>
+        <option${doc.status === 'contacted' ? ' selected' : ''}>contacted</option>
+        <option${doc.status === 'interested' ? ' selected' : ''}>interested</option>
+        <option${doc.status === 'closed' ? ' selected' : ''}>closed</option>
+        <option${doc.status === 'lost' ? ' selected' : ''}>lost</option>
+      </select>
+      <button onclick="saveLead(this, '${doc._id}')">💾 Save</button>
+    `;
 
     if (isAdmin) {
-      const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "🗑 Bulk Delete Selected";
-      deleteBtn.className = "btn";
-      deleteBtn.onclick = async () => {
-        const checked = document.querySelectorAll(".lead-checkbox:checked");
-        if (checked.length && confirm("Delete selected leads?")) {
-          for (const box of checked) {
-            const doc = await db.get(box.dataset.id);
-            await db.remove(doc);
-          }
-          loadLeads();
-        }
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.onclick = () => {
+        if (checkbox.checked) selected.push(doc._id);
+        else selected.splice(selected.indexOf(doc._id), 1);
+        document.getElementById("bulkControls").style.display = selected.length ? 'block' : 'none';
       };
-      container.appendChild(deleteBtn);
+      card.prepend(checkbox);
     }
 
-    res.rows.forEach(({ doc }) => {
-      const div = document.createElement("div");
-      div.className = "lead-card";
-
-      if (isAdmin) {
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "lead-checkbox";
-        checkbox.dataset.id = doc._id;
-        div.appendChild(checkbox);
-      }
-
-      div.innerHTML += `<b>${doc.name || "Unnamed"}</b> (${doc.contact_number || "N/A"})<br>
-        City: ${doc.city || '-'} | Rep: ${doc.assigned_to || '-'}<br>
-        Project: ${doc.project_interest || '-'}<br>
-        Budget: ${doc.budget_min || ''} - ${doc.budget_max || ''}<br>
-        ${doc.updated_at || ''}`;
-
-      container.appendChild(div);
-    });
+    container.appendChild(card);
   }
+}
 
-  loadLeads();
-  setInterval(() => {
-    exportToSheets();
-    importFromSheets();
-  }, 30 * 60 * 1000); // 30 minutes
+async function saveLead(btn, id) {
+  const card = btn.parentElement;
+  const note = card.querySelector("textarea").value;
+  const status = card.querySelector("select").value;
+  const doc = await db.get(id);
+  doc.Comments = note;
+  doc.status = status;
+  doc.updated_at = new Date().toISOString();
+  await db.put(doc);
+  alert("✅ Lead updated");
+  renderLeads();
+}
+
+async function deleteSelectedLeads() {
+  const res = await db.allDocs({ include_docs: true });
+  for (const { doc } of res.rows) {
+    if (document.querySelector(`input[type=checkbox][value='${doc._id}']`)?.checked) {
+      await db.remove(doc);
+    }
+  }
+  alert("🗑 Selected leads deleted.");
+  renderLeads();
+}
+
+renderLeads();
 </script>
-
 </body>
 </html>
