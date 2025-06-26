@@ -79,7 +79,7 @@
     <a href="#" onclick="logout()">Logout</a>
   </div>
 
-  <div class="container">
+ <div class="container">
     <div class="form-card">
       <h3>Create Deal</h3>
       <form id="dealForm">
@@ -114,6 +114,17 @@
       </form>
     </div>
 
+    <div class="form-card">
+      <h3>Filter Deals</h3>
+      <div class="filter-row">
+        <select id="filterAgent"><option value="">All Agents</option></select>
+        <input type="date" id="filterFrom" />
+        <input type="date" id="filterTo" />
+        <input type="text" id="filterProject" placeholder="Project ID" />
+        <button onclick="loadDeals()">Apply Filters</button>
+      </div>
+    </div>
+
     <div class="deal-card">
       <h3>All Deals</h3>
       <div id="dealsContainer"></div>
@@ -136,6 +147,7 @@
   const dealsContainer = document.getElementById('dealsContainer');
   const primaryAgent = document.getElementById('primaryAgent');
   const secondaryAgent = document.getElementById('secondaryAgent');
+  const filterAgent = document.getElementById('filterAgent');
 
   async function loadOptions() {
     const leads = await dbLeads.allDocs({ include_docs: true });
@@ -176,6 +188,11 @@
         opt2.value = doc.name;
         opt2.textContent = doc.name;
         secondaryAgent.appendChild(opt2);
+
+        const opt3 = document.createElement("option");
+        opt3.value = doc.name;
+        opt3.textContent = doc.name;
+        filterAgent.appendChild(opt3);
       }
     });
   }
@@ -225,19 +242,44 @@
   };
 
   async function loadDeals() {
+    const filterA = filterAgent.value;
+    const from = new Date(document.getElementById('filterFrom').value || '2000-01-01');
+    const to = new Date(document.getElementById('filterTo').value || '2100-01-01');
+    const proj = document.getElementById('filterProject').value.toLowerCase();
+
     const res = await dbDeals.allDocs({ include_docs: true });
-    dealsContainer.innerHTML = res.rows.map(({ doc }) => `
-      <div class="form-card">
-        <strong>Lead:</strong> ${doc.lead_id}<br>
-        <strong>Unit:</strong> ${doc.unit_id}<br>
-        <strong>Primary Agent:</strong> ${doc.primary_agent}<br>
-        <strong>Secondary Agent:</strong> ${doc.secondary_agent || '-'}<br>
-        <strong>Sale Price:</strong> PKR ${doc.sale_price}<br>
-        <strong>Commission:</strong> PKR ${doc.commission}<br>
-        <strong>Token Received:</strong> PKR ${doc.token_amount || '0'}<br>
-        <em>${doc.notes || ''}</em>
-      </div>
-    `).join('');
+    dealsContainer.innerHTML = res.rows.map(({ doc }) => {
+      const date = new Date(doc.created_at);
+      if (date < from || date > to) return '';
+      if (filterA && doc.primary_agent !== filterA && doc.secondary_agent !== filterA) return '';
+      if (proj && !(doc.unit_id.toLowerCase().includes(proj))) return '';
+
+      const commission = parseFloat(doc.commission || 0);
+      const sellerCount = doc.secondary_agent ? 2 : 1;
+      const remainingPartners = 4 - sellerCount;
+
+      const officeShare = commission * 0.20;
+      const sellerShare = commission * (sellerCount === 1 ? 0.40 : 0.60);
+      const sellerSplit = sellerShare / sellerCount;
+      const remainingSplit = commission * (sellerCount === 1 ? 0.40 : 0.20) / remainingPartners;
+
+      return `
+        <div class="form-card">
+          <strong>Lead:</strong> ${doc.lead_id}<br>
+          <strong>Unit:</strong> ${doc.unit_id}<br>
+          <strong>Primary Agent:</strong> ${doc.primary_agent}<br>
+          <strong>Secondary Agent:</strong> ${doc.secondary_agent || '-'}<br>
+          <strong>Sale Price:</strong> PKR ${doc.sale_price}<br>
+          <strong>Commission:</strong> PKR ${commission}<br>
+          <strong>Token Received:</strong> PKR ${doc.token_amount || '0'}<br>
+          <em>${doc.notes || ''}</em>
+          <hr>
+          <strong>Office Share:</strong> PKR ${officeShare.toFixed(0)}<br>
+          <strong>Each Seller:</strong> PKR ${sellerSplit.toFixed(0)}<br>
+          <strong>Each Other Partner:</strong> PKR ${remainingSplit.toFixed(0)}
+        </div>
+      `;
+    }).join('');
   }
 
   loadOptions();
