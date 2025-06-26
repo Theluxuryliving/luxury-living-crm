@@ -5,7 +5,10 @@
   <title>CRM - Leads</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="sheets.js"></script>
+<button onclick="exportToSheets()">Export</button>
+<button onclick="importFromSheets()">Import</button>
+
+<script src="sheets.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     input, select, textarea { display: block; margin: 5px 0; padding: 5px; width: 100%; }
