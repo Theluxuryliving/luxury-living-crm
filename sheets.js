@@ -1,13 +1,12 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAtraDpVoYu0pmDAl84KItv1NaRetAhOJJgUFr9gVHHkgHEwsW9-8uh0SXltNQPt08Fg/exec';
+const PROXY_URL = 'https://crm-cors-proxy.atif-zubair.workers.dev/'; // Replace this with your deployed Cloudflare Worker URL
 
-// Export data to Google Sheets
 window.exportToSheets = async function () {
   try {
     const db = new PouchDB("crm_leads");
     const allDocs = await db.allDocs({ include_docs: true });
     const leads = allDocs.rows.map(row => row.doc);
 
-    const response = await fetch(SCRIPT_URL, {
+    const response = await fetch(PROXY_URL, {
       method: "POST",
       body: JSON.stringify({ leads }),
       headers: {
@@ -16,25 +15,23 @@ window.exportToSheets = async function () {
     });
 
     const result = await response.text();
-    alert("Export Successful: " + result);
+    alert("✅ Export Successful: " + result);
   } catch (error) {
     console.error("Export error:", error);
-    alert("Export Failed: " + error.message);
+    alert("❌ Export Failed: " + error.message);
   }
 };
 
-// Import data from Google Sheets
 window.importFromSheets = async function () {
   try {
-    const response = await fetch(SCRIPT_URL + "?action=import");
+    const response = await fetch(`${PROXY_URL}?action=import`);
     const data = await response.json();
 
     const db = new PouchDB("crm_leads");
 
     for (const item of data) {
-      if (!item._id) {
-        item._id = new Date().toISOString();
-      }
+      if (!item._id) item._id = new Date().toISOString();
+
       try {
         await db.put(item);
       } catch (e) {
@@ -48,9 +45,9 @@ window.importFromSheets = async function () {
       }
     }
 
-    alert("Import Successful: " + data.length + " records.");
+    alert("✅ Import Successful: " + data.length + " records.");
   } catch (error) {
     console.error("Import error:", error);
-    alert("Import Failed: " + error.message);
+    alert("❌ Import Failed: " + error.message);
   }
 };
