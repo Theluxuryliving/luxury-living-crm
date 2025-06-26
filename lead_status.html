@@ -83,7 +83,7 @@
 <body>
 
 <div class="navbar">
-    <a href="dashboard.html">Dashboard</a>
+  <a href="dashboard.html">Dashboard</a>
     <a href="leads.html">Leads</a>
     <a href="form.html">➕ Add New Client</a>
     <a href="Projects_inventory.html">Inventory</a>
@@ -153,8 +153,14 @@
     const leadsRes = await dbLeads.allDocs({ include_docs: true });
     const activityRes = await dbActivities.allDocs({ include_docs: true });
 
-    const leads = leadsRes.rows.map(r => r.doc).filter(l => {
-      const created = new Date(l.created_at || l._id);
+    const leads = leadsRes.rows.map(r => {
+      const doc = r.doc;
+      // Normalize status and ensure created_at
+      doc.status = (doc.status || doc["Lead Status"] || "new").toLowerCase();
+      doc.created_at = doc.created_at || doc._id;
+      return doc;
+    }).filter(l => {
+      const created = new Date(l.created_at);
       const matchAgent = !agent || l.assigned_to === agent;
       const inDateRange = created >= from && created <= to;
       return matchAgent && inDateRange;
@@ -191,7 +197,6 @@
         `;
         block.appendChild(card);
 
-        // Collect stats
         const assigned = lead.assigned_to;
         if (!agentStats[assigned]) agentStats[assigned] = { total: 0, followups: 0, closed: 0 };
         agentStats[assigned].total++;
