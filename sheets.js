@@ -1,5 +1,6 @@
-const PROXY_URL = 'https://crm-cors-proxy.atif-zubair.workers.dev/'; // Replace this with your deployed Cloudflare Worker URL
+const PROXY_URL = 'https://crm-cors-proxy.atif-zubair.workers.dev/'; // 🔁 Replace with your Worker URL
 
+// ✅ EXPORT: Send local leads from PouchDB to Google Sheet (via Worker)
 window.exportToSheets = async function () {
   try {
     const db = new PouchDB("crm_leads");
@@ -15,16 +16,18 @@ window.exportToSheets = async function () {
     });
 
     const result = await response.text();
-    alert("✅ Export Successful: " + result);
+    console.log("✅ Export Success:", result);
+    alert("✅ Exported to Google Sheets!");
   } catch (error) {
-    console.error("Export error:", error);
+    console.error("❌ Export error:", error);
     alert("❌ Export Failed: " + error.message);
   }
 };
 
+// ✅ IMPORT: Pull data from Google Sheet (via Worker) and save into PouchDB
 window.importFromSheets = async function () {
   try {
-    const response = await fetch(`${PROXY_URL}?action=import`);
+    const response = await fetch(PROXY_URL + "?action=import");
     const data = await response.json();
 
     const db = new PouchDB("crm_leads");
@@ -45,9 +48,10 @@ window.importFromSheets = async function () {
       }
     }
 
-    alert("✅ Import Successful: " + data.length + " records.");
+    console.log("✅ Import Success:", data.length, "records");
+    alert("✅ Imported " + data.length + " records from Google Sheets.");
   } catch (error) {
-    console.error("Import error:", error);
+    console.error("❌ Import error:", error);
     alert("❌ Import Failed: " + error.message);
   }
 };
