@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CRM - Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <title>CRM Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       background: #0d0d0d;
       color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
     }
@@ -27,35 +27,26 @@
       margin: 0 15px;
       font-weight: bold;
     }
-    .dashboard-cards {
-      display: flex;
-      justify-content: space-around;
+    .chart-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
       padding: 20px;
-      flex-wrap: wrap;
     }
-    .card {
+    canvas {
       background: #1a1a1a;
-      border: 1px solid gold;
-      border-radius: 10px;
-      padding: 20px;
-      margin: 10px;
-      flex: 1;
-      min-width: 200px;
-      text-align: center;
-      box-shadow: 0 0 10px #333;
+      border-radius: 8px;
+      padding: 10px;
     }
-    canvas { background: white; border-radius: 10px; margin: 20px auto; display: block; }
-    .chart-section {
-      padding: 20px;
-    }
-    button.download {
-      margin: 10px;
+    .download-btn {
+      margin: 10px auto;
+      display: block;
       padding: 10px 20px;
       background: gold;
       color: black;
-      font-weight: bold;
       border: none;
       border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
     }
   </style>
@@ -69,112 +60,96 @@
     <a href="Deals.html">Deals</a>
     <a href="Sales_Flow.html">Sales Flow</a>
     <a href="Lead_status.html">Leads Status</a>
+    <a href="#" onclick="exportToSheets()">Export</a>
+    <a href="#" onclick="importFromSheets()">Import</a>
+    <a href="#" onclick="logout()">Logout</a>
   </div>
 
-  <div class="dashboard-cards" id="summaryCards"></div>
-
-  <div class="chart-section">
-    <canvas id="statusChart" width="400" height="200"></canvas>
-    <canvas id="funnelChart" width="400" height="200"></canvas>
-    <canvas id="agentChart" width="400" height="200"></canvas>
-    <button class="download" onclick="downloadPDF()">Download PDF Report</button>
+  <div class="chart-container">
+    <canvas id="statusPie"></canvas>
+    <canvas id="conversionBar"></canvas>
+    <canvas id="agentPie"></canvas>
   </div>
+  <button class="download-btn" onclick="downloadDashboardPDF()">Download as PDF</button>
 
-<script>
-  const db = new PouchDB("crm_leads");
+  <script>
+    const db = new PouchDB("crm_leads");
 
-  async function generateDashboard() {
-    const res = await db.allDocs({ include_docs: true });
-    const leads = res.rows.map(r => r.doc);
-
-    const summary = {
-      total: leads.length,
-      closed: leads.filter(l => (l["Lead Status"] || '').toLowerCase() === "closed").length,
-      projects: [...new Set(leads.map(l => l.Area).filter(Boolean))].length,
-      agents: [...new Set(leads.map(l => l.assigned_to).filter(Boolean))].length,
-    };
-
-    document.getElementById("summaryCards").innerHTML = `
-      <div class="card"><h3>${summary.total}</h3><p>Total Leads</p></div>
-      <div class="card"><h3>${summary.closed}</h3><p>Closed Deals</p></div>
-      <div class="card"><h3>${summary.projects}</h3><p>Active Projects</p></div>
-      <div class="card"><h3>${summary.agents}</h3><p>Sales Agents</p></div>
-    `;
-
-    drawCharts(leads);
-  }
-
-  function drawCharts(leads) {
-    const statusCounts = {};
-    const funnel = { new: 0, contacted: 0, interested: 0, closed: 0 };
-    const agentStats = {};
-
-    const now = new Date();
-
-    leads.forEach(lead => {
-      const status = (lead["Lead Status"] || "New").toLowerCase();
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
-      if (funnel[status] !== undefined) funnel[status]++;
-
-      const agent = lead.assigned_to || "Unassigned";
-      agentStats[agent] = (agentStats[agent] || 0) + 1;
-    });
-
-    new Chart(document.getElementById('statusChart'), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(statusCounts),
-        datasets: [{
-          data: Object.values(statusCounts),
-          backgroundColor: ["gold", "#007bff", "#28a745", "#6c757d", "#dc3545"]
-        }]
-      },
-      options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
-    });
-
-    new Chart(document.getElementById('funnelChart'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(funnel),
-        datasets: [{
-          label: 'Leads Funnel',
-          data: Object.values(funnel),
-          backgroundColor: 'gold'
-        }]
-      },
-      options: { plugins: { title: { display: true, text: 'Conversion Funnel' } } }
-    });
-
-    new Chart(document.getElementById('agentChart'), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(agentStats),
-        datasets: [{
-          data: Object.values(agentStats),
-          backgroundColor: ["#e6b800", "#1a75ff", "#00cc66", "#cc0066", "#9933ff"]
-        }]
-      },
-      options: { plugins: { title: { display: true, text: 'Agent Lead Distribution' } } }
-    });
-  }
-
-  async function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("CRM Dashboard Report", 10, 10);
-    const charts = ["statusChart", "funnelChart", "agentChart"];
-    let y = 20;
-    for (const id of charts) {
-      const canvas = document.getElementById(id);
-      const imgData = canvas.toDataURL("image/png");
-      doc.addImage(imgData, "PNG", 10, y, 180, 90);
-      y += 100;
+    function logout() {
+      localStorage.clear();
+      window.location.href = "Index.html";
     }
-    doc.save("crm_dashboard_report.pdf");
-  }
 
-  generateDashboard();
-</script>
+    function groupBy(data, key) {
+      return data.reduce((acc, obj) => {
+        const val = obj[key] || 'Unknown';
+        acc[val] = (acc[val] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    async function generateCharts() {
+      const res = await db.allDocs({ include_docs: true });
+      const leads = res.rows.map(r => r.doc);
+
+      const statusData = groupBy(leads, "Lead Status");
+      const repData = groupBy(leads, "assigned_to");
+
+      const ctx1 = document.getElementById("statusPie").getContext("2d");
+      new Chart(ctx1, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(statusData),
+          datasets: [{
+            data: Object.values(statusData),
+            backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545']
+          }]
+        },
+        options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
+      });
+
+      const ctx2 = document.getElementById("conversionBar").getContext("2d");
+      new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(statusData),
+          datasets: [{
+            label: 'Conversion Overview',
+            data: Object.values(statusData),
+            backgroundColor: 'gold'
+          }]
+        },
+        options: { plugins: { title: { display: true, text: 'Lead Conversion Analysis' } } }
+      });
+
+      const ctx3 = document.getElementById("agentPie").getContext("2d");
+      new Chart(ctx3, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(repData),
+          datasets: [{
+            data: Object.values(repData),
+            backgroundColor: ['#f0ad4e', '#5bc0de', '#d9534f', '#5cb85c']
+          }]
+        },
+        options: { plugins: { title: { display: true, text: 'Agent Lead Assignment' } } }
+      });
+    }
+
+    async function downloadDashboardPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("CRM Dashboard Report", 10, 10);
+      doc.html(document.body, {
+        callback: function (pdf) {
+          pdf.save("dashboard-report.pdf");
+        },
+        x: 10,
+        y: 20
+      });
+    }
+
+    generateCharts();
+  </script>
 </body>
 </html>
