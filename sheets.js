@@ -1,18 +1,15 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcHVxzGNtlmFZPNR-ZNzh7kMvvxP5rSFhCNijJcUiHH_i8FtPuyFSGBOL0CgtU2SIeNA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAtraDpVoYu0pmDAl84KItv1NaRetAhOJJgUFr9gVHHkgHEwsW9-8uh0SXltNQPt08Fg/exec';
 
 window.exportToSheets = async function () {
+  const url = 'https://script.google.com/macros/s/AKfycbzAtraDpVoYu0pmDAl84KItv1NaRetAhOJJgUFr9gVHHkgHEwsW9-8uh0SXltNQPt08Fg/exec';
   try {
-    const db = new PouchDB('crm_leads');
-    const allDocs = await db.allDocs({ include_docs: true });
-    const leads = allDocs.rows.map(row => row.doc);
-
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(leads),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const test = await fetch(url);
+    const txt = await test.text();
+    console.log("Fetch test result:", txt);
+  } catch (err) {
+    console.error("Test fetch failed:", err);
+  }
+}
 
     const result = await res.json();
     if (result.success) {
