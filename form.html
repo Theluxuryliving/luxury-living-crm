@@ -1,73 +1,198 @@
-<form id="leadForm">
-  <input type="text" name="Name" placeholder="Full Name" required>
-  <input type="email" name="Email" placeholder="Email" required>
-  <input type="tel" name="Phone" placeholder="Phone Number" required>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add New Client</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0b0b;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #1a1a1a;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      color: gold;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid gold;
+      border-radius: 6px;
+      background-color: #111;
+      color: white;
+      font-size: 14px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+    button {
+      grid-column: span 2;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: gold;
+      color: #0b0b0b;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #e6c200;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Add New Client</h1>
+    <form id="leadForm">
+      <div>
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required>
+      </div>
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email">
+      </div>
+      <div>
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" required>
+      </div>
+      <div>
+        <label for="city">City</label>
+        <select id="city">
+          <option>Lahore</option>
+          <option>Karachi</option>
+          <option>Islamabad</option>
+          <option>Rawalpindi</option>
+          <option>Multan</option>
+          <option>Faisalabad</option>
+          <option>Peshawar</option>
+          <option>Quetta</option>
+          <option>Others</option>
+        </select>
+      </div>
+      <div>
+        <label for="country">Country</label>
+        <select id="country">
+          <option>Pakistan</option>
+          <option>US</option>
+          <option>UK</option>
+          <option>Europe</option>
+          <option>Africa</option>
+          <option>Middle East</option>
+          <option>China</option>
+          <option>Japan</option>
+          <option>Asia</option>
+        </select>
+      </div>
+      <div>
+        <label for="propertyType">Property Types</label>
+        <input type="text" id="propertyType" placeholder="e.g. 2 Bedroom Apartment, Villa">
+      </div>
+      <div>
+        <label for="area">Area</label>
+        <select id="area">
+          <option>DHA</option>
+          <option>Bahria</option>
+          <option>Canal Bank Road</option>
+          <option>Gulberg</option>
+          <option>Model Town</option>
+          <option>Garden Town</option>
+          <option>Ruda</option>
+          <option>Etihad Town</option>
+          <option>Johar Town</option>
+          <option>Valancia</option>
+          <option>LDA</option>
+          <option>Wapda Town</option>
+          <option>Others</option>
+        </select>
+      </div>
+      <div>
+        <label for="budget">Budget (in million)</label>
+        <input type="number" id="budget" min="1" placeholder="e.g. 15">
+      </div>
+      <div>
+        <label for="status">Property Status</label>
+        <select id="status">
+          <option>Ready to Move</option>
+          <option>Off-Plan</option>
+        </select>
+      </div>
+      <div>
+        <label for="timeline">Timeline</label>
+        <input type="text" id="timeline" placeholder="e.g. Immediately, 3 months">
+      </div>
+      <div>
+        <label for="source">Lead Source</label>
+        <input type="text" id="source" placeholder="e.g. Facebook">
+      </div>
+      <div class="full-width">
+        <label for="comments">Comments</label>
+        <textarea id="comments"></textarea>
+      </div>
+      <button type="submit">Submit Lead</button>
+    </form>
+  </div>
 
-  <select name="City" required>
-    <option value="">Select City</option>
-    <option>Lahore</option>
-    <option>Karachi</option>
-    <option>Islamabad</option>
-    <option>Rawalpindi</option>
-    <option>Peshawar</option>
-    <option>Multan</option>
-    <option>Faisalabad</option>
-    <option>Quetta</option>
-  </select>
+  <script>
+    document.getElementById('leadForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const data = {
+        Name: document.getElementById('name').value,
+        Email: document.getElementById('email').value,
+        Phone: document.getElementById('phone').value,
+        City: document.getElementById('city').value,
+        Country: document.getElementById('country').value,
+        'Property Types': document.getElementById('propertyType').value,
+        Area: document.getElementById('area').value,
+        Budget: document.getElementById('budget').value + ' million',
+        'Property Status': document.getElementById('status').value,
+        Timeline: document.getElementById('timeline').value,
+        'Lead Source': document.getElementById('source').value,
+        Comments: document.getElementById('comments').value,
+        updated_at: new Date().toISOString(),
+        _id: new Date().toISOString()
+      };
 
-  <select name="Country" required>
-    <option value="">Select Country</option>
-    <option>Pakistan</option>
-    <option>US</option>
-    <option>UK</option>
-    <option>Europe</option>
-    <option>Middle East</option>
-    <option>Africa</option>
-    <option>China</option>
-    <option>Japan</option>
-    <option>Asia</option>
-  </select>
-
-  <input type="text" name="Property Types" placeholder="e.g., Apartment, Villa" required>
-
-  <select name="Area" required>
-    <option value="">Select Area</option>
-    <option>DHA</option>
-    <option>Bahria</option>
-    <option>Canal Bank Road</option>
-    <option>Gulberg</option>
-    <option>Model Town</option>
-    <option>Garden Town</option>
-    <option>Ruda</option>
-    <option>Etihad Town</option>
-    <option>Johar Town</option>
-    <option>Valancia</option>
-    <option>LDA</option>
-    <option>Wapda Town</option>
-    <option>Others</option>
-  </select>
-
-  <label for="budget">Budget (in millions)</label>
-  <input type="range" name="Budget" min="1" max="100" step="1" oninput="budgetOutput.value = this.value">
-  <output id="budgetOutput">50</output> million
-
-  <select name="Property Status" required>
-    <option value="">Select Status</option>
-    <option>Ready to Move</option>
-    <option>Off-Plan</option>
-  </select>
-
-  <select name="Timeline" required>
-    <option value="">Timeline to Purchase</option>
-    <option>Immediately</option>
-    <option>Within 3 months</option>
-    <option>3-6 months</option>
-    <option>6+ months</option>
-  </select>
-
-  <input type="text" name="Lead Source" placeholder="Lead Source (e.g. Facebook, Referral)">
-
-  <textarea name="Comments" placeholder="Additional Notes or Comments"></textarea>
-
-  <button type="submit">Submit Lead</button>
-</form>
+      try {
+        const db = new PouchDB('crm_leads');
+        await db.put(data);
+        alert('Lead saved locally. It will sync soon.');
+        document.getElementById('leadForm').reset();
+      } catch (err) {
+        alert('Error saving lead.');
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
