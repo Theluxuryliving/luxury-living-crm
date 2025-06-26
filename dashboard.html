@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>CRM Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
+      font-family: 'Segoe UI', sans-serif;
       background: #0d0d0d;
       color: #fff;
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
     }
@@ -27,31 +27,72 @@
       margin: 0 15px;
       font-weight: bold;
     }
-    .chart-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    .top-box {
+      background: #222;
+      color: gold;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      border-bottom: 1px solid gold;
+    }
+    .dashboard-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 20px;
       padding: 20px;
     }
-    canvas {
+    .chart-box {
       background: #1a1a1a;
-      border-radius: 8px;
-      padding: 10px;
+      border: 1px solid gold;
+      border-radius: 10px;
+      padding: 20px;
+      width: 400px;
+    }
+    .filters {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .filters input, .filters select {
+      margin: 5px;
+      padding: 8px;
+      border-radius: 5px;
+      border: none;
     }
     .download-btn {
-      margin: 10px auto;
-      display: block;
-      padding: 10px 20px;
       background: gold;
       color: black;
       border: none;
-      border-radius: 6px;
+      padding: 10px 20px;
       font-weight: bold;
+      border-radius: 8px;
       cursor: pointer;
+      margin: 10px auto;
+      display: block;
+    }
+    .table-container {
+      width: 90%;
+      margin: 20px auto;
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid gold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: white;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid gold;
+      text-align: left;
     }
   </style>
 </head>
 <body>
+
   <div class="navbar">
     <a href="dashboard.html">Dashboard</a>
     <a href="leads.html">Leads</a>
@@ -60,94 +101,202 @@
     <a href="Deals.html">Deals</a>
     <a href="Sales_Flow.html">Sales Flow</a>
     <a href="Lead_status.html">Leads Status</a>
-    <a href="#" onclick="exportToSheets()">Export</a>
-    <a href="#" onclick="importFromSheets()">Import</a>
     <a href="#" onclick="logout()">Logout</a>
   </div>
 
-  <div class="chart-container">
-    <canvas id="statusPie"></canvas>
-    <canvas id="conversionBar"></canvas>
-    <canvas id="agentPie"></canvas>
+  <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
+
+  <div class="filters">
+    From: <input type="date" id="startDate" />
+    To: <input type="date" id="endDate" />
+    Agent: <select id="agentFilter"><option value="">All Agents</option></select>
+    <button onclick="loadDashboard()">Apply</button>
+    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
   </div>
-  <button class="download-btn" onclick="downloadDashboardPDF()">Download as PDF</button>
 
-  <script>
-    const db = new PouchDB("crm_leads");
+  <div class="dashboard-container">
+    <div class="chart-box">
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <canvas id="conversionChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <canvas id="agentPieChart"></canvas>
+    </div>
+  </div>
 
-    function logout() {
-      localStorage.clear();
-      window.location.href = "Index.html";
+  <div class="table-container">
+    <h3>Conversion Summary</h3>
+    <table>
+      <thead>
+        <tr><th>Agent</th><th>Leads Assigned</th><th>Closed Deals</th><th>Conversion %</th><th>Avg. Lead Conversion Time</th></tr>
+      </thead>
+      <tbody id="conversionTable"></tbody>
+    </table>
+  </div>
+
+<script>
+const db = new PouchDB("crm_leads");
+
+function logout() {
+  localStorage.removeItem("repName");
+  window.location.href = "index.html";
+}
+
+async function loadDashboard() {
+  const allDocs = await db.allDocs({ include_docs: true });
+  const leads = allDocs.rows.map(r => r.doc);
+
+  const start = document.getElementById("startDate").valueAsDate;
+  const end = document.getElementById("endDate").valueAsDate;
+  const agent = document.getElementById("agentFilter").value;
+
+  const filtered = leads.filter(lead => {
+    const d = new Date(lead.updated_at || lead.created_at);
+    const inDateRange = (!start || d >= start) && (!end || d <= end);
+    const matchesAgent = !agent || lead.assigned_to === agent;
+    return inDateRange && matchesAgent;
+  });
+
+  drawStatusChart(filtered);
+  drawConversionChart(filtered);
+  drawAgentPieChart(filtered);
+  populateConversionTable(leads);
+  updateLastSale(leads);
+  populateAgentFilter(leads);
+}
+
+function updateLastSale(leads) {
+  const closed = leads.filter(l => l["Lead Status"] === "Closed");
+  if (!closed.length) return;
+  const last = closed.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+  const days = Math.floor((Date.now() - new Date(last.updated_at)) / (1000 * 60 * 60 * 24));
+  document.getElementById("lastSaleBox").innerText = `Days since last sale: ${days}`;
+}
+
+function populateAgentFilter(leads) {
+  const agents = [...new Set(leads.map(l => l.assigned_to).filter(Boolean))];
+  const sel = document.getElementById("agentFilter");
+  sel.innerHTML = `<option value="">All Agents</option>` + agents.map(a => `<option>${a}</option>`).join('');
+}
+
+function drawStatusChart(leads) {
+  const counts = {};
+  leads.forEach(l => {
+    const s = l["Lead Status"] || "New";
+    counts[s] = (counts[s] || 0) + 1;
+  });
+
+  new Chart(document.getElementById("statusChart"), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545']
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Lead Status Distribution' } }
     }
+  });
+}
 
-    function groupBy(data, key) {
-      return data.reduce((acc, obj) => {
-        const val = obj[key] || 'Unknown';
-        acc[val] = (acc[val] || 0) + 1;
-        return acc;
-      }, {});
+function drawConversionChart(leads) {
+  const weeks = {};
+  leads.forEach(l => {
+    const d = new Date(l.updated_at || l.created_at);
+    const week = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
+    if (!weeks[week]) weeks[week] = { total: 0, closed: 0 };
+    weeks[week].total++;
+    if (l["Lead Status"] === "Closed") weeks[week].closed++;
+  });
+
+  const labels = Object.keys(weeks);
+  const data = labels.map(k => (weeks[k].closed / weeks[k].total * 100).toFixed(1));
+
+  new Chart(document.getElementById("conversionChart"), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '% Converted',
+        data,
+        backgroundColor: '#17a2b8'
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Weekly Conversion Rate %' } },
+      scales: { y: { beginAtZero: true, max: 100 } }
     }
+  });
+}
 
-    async function generateCharts() {
-      const res = await db.allDocs({ include_docs: true });
-      const leads = res.rows.map(r => r.doc);
+function drawAgentPieChart(leads) {
+  const reps = {};
+  leads.forEach(l => {
+    const rep = l.assigned_to || "Unassigned";
+    reps[rep] = (reps[rep] || 0) + 1;
+  });
 
-      const statusData = groupBy(leads, "Lead Status");
-      const repData = groupBy(leads, "assigned_to");
-
-      const ctx1 = document.getElementById("statusPie").getContext("2d");
-      new Chart(ctx1, {
-        type: 'pie',
-        data: {
-          labels: Object.keys(statusData),
-          datasets: [{
-            data: Object.values(statusData),
-            backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545']
-          }]
-        },
-        options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
-      });
-
-      const ctx2 = document.getElementById("conversionBar").getContext("2d");
-      new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(statusData),
-          datasets: [{
-            label: 'Conversion Overview',
-            data: Object.values(statusData),
-            backgroundColor: 'gold'
-          }]
-        },
-        options: { plugins: { title: { display: true, text: 'Lead Conversion Analysis' } } }
-      });
-
-      const ctx3 = document.getElementById("agentPie").getContext("2d");
-      new Chart(ctx3, {
-        type: 'pie',
-        data: {
-          labels: Object.keys(repData),
-          datasets: [{
-            data: Object.values(repData),
-            backgroundColor: ['#f0ad4e', '#5bc0de', '#d9534f', '#5cb85c']
-          }]
-        },
-        options: { plugins: { title: { display: true, text: 'Agent Lead Assignment' } } }
-      });
+  new Chart(document.getElementById("agentPieChart"), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(reps),
+      datasets: [{
+        data: Object.values(reps),
+        backgroundColor: ['gold', '#ffc107', '#6c757d', '#007bff', '#28a745']
+      }]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Leads per Agent' } }
     }
+  });
+}
 
-    async function downloadDashboardPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.text("CRM Dashboard Report", 10, 10);
-      doc.html(document.body, {
-        callback: function (pdf) {
-          pdf.save("dashboard-report.pdf");
-        },
-        x: 10,
-        y: 20
-      });
+function populateConversionTable(leads) {
+  const agents = {};
+  leads.forEach(l => {
+    const a = l.assigned_to || "Unassigned";
+    if (!agents[a]) agents[a] = { total: 0, closed: 0, times: [] };
+    agents[a].total++;
+    if (l["Lead Status"] === "Closed") {
+      agents[a].closed++;
+      const created = new Date(l.created_at);
+      const closed = new Date(l.updated_at);
+      const days = Math.floor((closed - created) / (1000 * 60 * 60 * 24));
+      agents[a].times.push(days);
     }
+  });
+
+  const tbody = document.getElementById("conversionTable");
+  tbody.innerHTML = "";
+
+  Object.entries(agents).forEach(([agent, stats]) => {
+    const avgTime = stats.times.length ? (stats.times.reduce((a, b) => a + b, 0) / stats.times.length).toFixed(1) + " days" : "-";
+    const percent = stats.total ? ((stats.closed / stats.total) * 100).toFixed(1) + "%" : "0%";
+    tbody.innerHTML += `<tr><td>${agent}</td><td>${stats.total}</td><td>${stats.closed}</td><td>${percent}</td><td>${avgTime}</td></tr>`;
+  });
+}
+
+function downloadPDF() {
+  import('jspdf').then(jsPDF => {
+    const doc = new jsPDF.jsPDF();
+    doc.text("CRM Dashboard Snapshot", 10, 10);
+    doc.html(document.body, {
+      callback: function (pdf) {
+        pdf.save("crm_dashboard.pdf");
+      }
+    });
+  });
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
+
 
     generateCharts();
   </script>
