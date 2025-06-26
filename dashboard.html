@@ -20,21 +20,18 @@
       margin: 0;
       padding: 0;
     }
-
     .navbar {
       background: #111;
       padding: 15px;
       text-align: center;
       border-bottom: 1px solid gold;
     }
-
     .navbar a {
       color: gold;
       text-decoration: none;
       margin: 0 15px;
       font-weight: bold;
     }
-
     .top-box {
       background: #222;
       color: gold;
@@ -44,7 +41,6 @@
       font-weight: bold;
       border-bottom: 1px solid gold;
     }
-
     .dashboard-container {
       display: flex;
       flex-wrap: wrap;
@@ -52,7 +48,6 @@
       gap: 20px;
       padding: 20px;
     }
-
     .chart-box {
       background: #1a1a1a;
       border: 1px solid gold;
@@ -60,19 +55,16 @@
       padding: 20px;
       width: 400px;
     }
-
     .filters {
       text-align: center;
       margin-top: 10px;
     }
-
     .filters input, .filters select {
       margin: 5px;
       padding: 8px;
       border-radius: 5px;
       border: none;
     }
-
     .download-btn {
       background: gold;
       color: black;
@@ -84,7 +76,6 @@
       margin: 10px auto;
       display: block;
     }
-
     .table-container {
       width: 90%;
       margin: 20px auto;
@@ -93,13 +84,11 @@
       border-radius: 10px;
       border: 1px solid gold;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       color: white;
     }
-
     th, td {
       padding: 10px;
       border: 1px solid gold;
@@ -108,7 +97,6 @@
   </style>
 </head>
 <body>
-
   <div class="navbar">
     <a href="dashboard.html">Dashboard</a>
     <a href="leads.html">Leads</a>
@@ -119,9 +107,7 @@
     <a href="Lead_status.html">Leads Status</a>
     <a href="#" onclick="logout()">Logout</a>
   </div>
-
   <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
-
   <div class="filters">
     From: <input type="date" id="startDate" />
     To: <input type="date" id="endDate" />
@@ -129,36 +115,42 @@
     <button onclick="loadDashboard()">Apply</button>
     <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
   </div>
-
   <div class="dashboard-container">
-    <div class="chart-box">
-      <canvas id="statusChart"></canvas>
-    </div>
-    <div class="chart-box">
-      <canvas id="conversionChart"></canvas>
-    </div>
-    <div class="chart-box">
-      <canvas id="agentPieChart"></canvas>
-    </div>
+    <div class="chart-box"><canvas id="statusChart"></canvas></div>
+    <div class="chart-box"><canvas id="conversionChart"></canvas></div>
+    <div class="chart-box"><canvas id="agentPieChart"></canvas></div>
   </div>
-
   <div class="table-container">
-    <h3>Conversion Summary</h3>
+    <h3>Performance Summary</h3>
     <table>
       <thead>
         <tr>
           <th>Agent</th>
-          <th>Leads Assigned</th>
-          <th>Closed Deals</th>
+          <th>Total Leads</th>
+          <th>Contacted</th>
+          <th>Closed</th>
           <th>Conversion %</th>
-          <th>Avg. Lead Conversion Time</th>
         </tr>
       </thead>
-      <tbody id="conversionTable"></tbody>
+      <tbody id="performanceTable"></tbody>
     </table>
   </div>
-
-  <!-- Dashboard Logic -->
+  <div class="table-container">
+    <h3>Average Conversion Time</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Avg Conversion Time</th>
+        </tr>
+      </thead>
+      <tbody id="avgConversionTimeTable"></tbody>
+    </table>
+  </div>
+  <div class="table-container">
+    <h3>Top Performing Agents</h3>
+    <ol id="topAgentsList"></ol>
+  </div>
   <script>
     const db = new PouchDB("crm_leads");
 
@@ -185,9 +177,11 @@
       drawStatusChart(filtered);
       drawConversionChart(filtered);
       drawAgentPieChart(filtered);
-      populateConversionTable(leads);
       updateLastSale(leads);
       populateAgentFilter(leads);
+      populatePerformanceTable(filtered);
+      populateAvgConversionTimeTable(filtered);
+      populateTopAgents(filtered);
     }
 
     function updateLastSale(leads) {
@@ -215,42 +209,31 @@
         type: 'pie',
         data: {
           labels: Object.keys(counts),
-          datasets: [{
-            data: Object.values(counts),
-            backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545']
-          }]
+          datasets: [{ data: Object.values(counts), backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545'] }]
         },
-        options: {
-          plugins: { title: { display: true, text: 'Lead Status Distribution' } }
-        }
+        options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
       });
     }
 
     function drawConversionChart(leads) {
-      const weeks = {};
+      const counts = {};
       leads.forEach(l => {
-        const d = new Date(l.updated_at || l.created_at);
-        const week = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
-        if (!weeks[week]) weeks[week] = { total: 0, closed: 0 };
-        weeks[week].total++;
-        if (l["Lead Status"] === "Closed") weeks[week].closed++;
+        const rep = l.assigned_to || "Unassigned";
+        if (!counts[rep]) counts[rep] = { total: 0, closed: 0 };
+        counts[rep].total++;
+        if (l["Lead Status"] === "Closed") counts[rep].closed++;
       });
-
-      const labels = Object.keys(weeks);
-      const data = labels.map(k => (weeks[k].closed / weeks[k].total * 100).toFixed(1));
+      const labels = Object.keys(counts);
+      const data = labels.map(k => ((counts[k].closed / counts[k].total) * 100).toFixed(1));
 
       new Chart(document.getElementById("conversionChart"), {
         type: 'bar',
         data: {
           labels,
-          datasets: [{
-            label: '% Converted',
-            data,
-            backgroundColor: '#17a2b8'
-          }]
+          datasets: [{ label: '% Converted', data, backgroundColor: '#17a2b8' }]
         },
         options: {
-          plugins: { title: { display: true, text: 'Weekly Conversion Rate %' } },
+          plugins: { title: { display: true, text: 'Conversion Rate by Agent' } },
           scales: { y: { beginAtZero: true, max: 100 } }
         }
       });
@@ -267,40 +250,56 @@
         type: 'pie',
         data: {
           labels: Object.keys(reps),
-          datasets: [{
-            data: Object.values(reps),
-            backgroundColor: ['gold', '#ffc107', '#6c757d', '#007bff', '#28a745']
-          }]
+          datasets: [{ data: Object.values(reps), backgroundColor: ['gold', '#ffc107', '#6c757d', '#007bff', '#28a745'] }]
         },
-        options: {
-          plugins: { title: { display: true, text: 'Leads per Agent' } }
-        }
+        options: { plugins: { title: { display: true, text: 'Leads per Agent' } } }
       });
     }
 
-    function populateConversionTable(leads) {
+    function populatePerformanceTable(leads) {
       const agents = {};
       leads.forEach(l => {
         const a = l.assigned_to || "Unassigned";
-        if (!agents[a]) agents[a] = { total: 0, closed: 0, times: [] };
+        if (!agents[a]) agents[a] = { total: 0, contacted: 0, closed: 0 };
         agents[a].total++;
+        if (l["Lead Status"] === "Contacted") agents[a].contacted++;
+        if (l["Lead Status"] === "Closed") agents[a].closed++;
+      });
+      const tbody = document.getElementById("performanceTable");
+      tbody.innerHTML = Object.entries(agents).map(([agent, s]) => {
+        const conv = s.total ? ((s.closed / s.total) * 100).toFixed(1) + "%" : "0%";
+        return `<tr><td>${agent}</td><td>${s.total}</td><td>${s.contacted}</td><td>${s.closed}</td><td>${conv}</td></tr>`;
+      }).join('');
+    }
+
+    function populateAvgConversionTimeTable(leads) {
+      const agents = {};
+      leads.forEach(l => {
         if (l["Lead Status"] === "Closed") {
-          agents[a].closed++;
-          const created = new Date(l.created_at);
-          const closed = new Date(l.updated_at);
-          const days = Math.floor((closed - created) / (1000 * 60 * 60 * 24));
-          agents[a].times.push(days);
+          const a = l.assigned_to || "Unassigned";
+          const days = (new Date(l.updated_at) - new Date(l.created_at)) / (1000 * 60 * 60 * 24);
+          if (!agents[a]) agents[a] = [];
+          agents[a].push(days);
         }
       });
+      const tbody = document.getElementById("avgConversionTimeTable");
+      tbody.innerHTML = Object.entries(agents).map(([a, daysArr]) => {
+        const avg = (daysArr.reduce((a, b) => a + b, 0) / daysArr.length).toFixed(1);
+        return `<tr><td>${a}</td><td>${avg} days</td></tr>`;
+      }).join('');
+    }
 
-      const tbody = document.getElementById("conversionTable");
-      tbody.innerHTML = "";
-
-      Object.entries(agents).forEach(([agent, stats]) => {
-        const avgTime = stats.times.length ? (stats.times.reduce((a, b) => a + b, 0) / stats.times.length).toFixed(1) + " days" : "-";
-        const percent = stats.total ? ((stats.closed / stats.total) * 100).toFixed(1) + "%" : "0%";
-        tbody.innerHTML += `<tr><td>${agent}</td><td>${stats.total}</td><td>${stats.closed}</td><td>${percent}</td><td>${avgTime}</td></tr>`;
+    function populateTopAgents(leads) {
+      const agents = {};
+      leads.forEach(l => {
+        if (l["Lead Status"] === "Closed") {
+          const a = l.assigned_to || "Unassigned";
+          agents[a] = (agents[a] || 0) + 1;
+        }
       });
+      const sorted = Object.entries(agents).sort((a, b) => b[1] - a[1]);
+      const list = document.getElementById("topAgentsList");
+      list.innerHTML = sorted.map(([a, c]) => `<li>${a} - ${c}</li>`).join('');
     }
 
     function downloadPDF() {
@@ -308,28 +307,27 @@
       const doc = new jsPDF('p', 'pt', 'a4');
       const padding = 20;
       const scale = 2;
-
       function renderElementToPDF(element, yOffset = 0, callback) {
         html2canvas(element, { scale }).then(canvas => {
           const imgData = canvas.toDataURL('image/png');
           const imgProps = doc.getImageProperties(imgData);
           const pdfWidth = doc.internal.pageSize.getWidth() - 2 * padding;
           const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
           doc.addImage(imgData, 'PNG', padding, yOffset + padding, pdfWidth, pdfHeight);
           callback(pdfHeight + padding * 2);
         });
       }
-
       const header = document.querySelector(".top-box");
       const dashboard = document.querySelector(".dashboard-container");
-      const table = document.querySelector(".table-container");
-
+      const tables = document.querySelectorAll(".table-container");
       renderElementToPDF(header, 0, (headerHeight) => {
         renderElementToPDF(dashboard, headerHeight, () => {
-          doc.addPage();
-          renderElementToPDF(table, 0, () => {
-            doc.save("crm_dashboard.pdf");
+          let offset = 0;
+          tables.forEach((t, i) => {
+            if (i > 0) doc.addPage();
+            renderElementToPDF(t, 0, () => {
+              if (i === tables.length - 1) doc.save("crm_dashboard.pdf");
+            });
           });
         });
       });
