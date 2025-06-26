@@ -7,39 +7,28 @@
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="sheets.js"></script>
   <style>
-    body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; }
-    input, select, textarea { margin: 5px 0; padding: 8px; border-radius: 6px; border: none; width: 100%; }
-    .btn { padding: 8px 16px; background: gold; color: black; border: none; cursor: pointer; font-weight: bold; margin: 5px; border-radius: 6px; }
-    .lead-card { background: #222; border: 1px solid gold; border-radius: 8px; padding: 15px; margin: 15px 0; }
-    .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    .new { background: gold; color: black; }
-    .contacted { background: #007bff; color: white; }
-    .interested { background: #28a745; color: white; }
-    .closed { background: #6c757d; color: white; }
-    .lost { background: #dc3545; color: white; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .filter-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-    .lead-actions { margin-top: 10px; }
-  </style>
-  body {
+    body {
       font-family: 'Segoe UI', sans-serif;
       background: #0d0d0d;
       color: #fff;
       margin: 0;
       padding: 0;
     }
+
     .navbar {
       background: #111;
       padding: 15px;
       text-align: center;
       border-bottom: 1px solid gold;
     }
+
     .navbar a {
       color: gold;
       text-decoration: none;
       margin: 0 15px;
       font-weight: bold;
     }
+
     .form-container {
       max-width: 600px;
       margin: 40px auto;
@@ -48,10 +37,12 @@
       border-radius: 10px;
       box-shadow: 0 0 10px #333;
     }
+
     .form-container h2 {
       text-align: center;
       color: gold;
     }
+
     input, select, textarea {
       width: 100%;
       padding: 12px;
@@ -62,11 +53,13 @@
       color: white;
       font-size: 16px;
     }
+
     label {
       font-weight: bold;
       margin-bottom: 5px;
       display: block;
     }
+
     button {
       background-color: gold;
       color: black;
@@ -78,157 +71,203 @@
       width: 100%;
       font-size: 16px;
     }
+
     button:hover {
       background-color: #bfa100;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background: gold;
+      color: black;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+      border-radius: 6px;
+    }
+
+    .lead-card {
+      background: #222;
+      border: 1px solid gold;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .new { background: gold; color: black; }
+    .contacted { background: #007bff; color: white; }
+    .interested { background: #28a745; color: white; }
+    .closed { background: #6c757d; color: white; }
+    .lost { background: #dc3545; color: white; }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px;
+    }
+
+    .lead-actions {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-<div class="navbar">
-  <a href="dashboard.html">Dashboard</a>
-  <a href="leads.html">Leads</a>
-  <a href="form.html">➕ Add New Client</a>
-  <a href="Projects_inventory.html">Inventory</a>
-  <a href="Deals.html">Deals</a>
-  <a href="Sales_Flow.html">Sales Flow</a>
-  <a href="Lead_status.html">leads status</a>
-   <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
-</div>
-  <input type="text" id="searchInput" placeholder="Search leads..." style="width: 300px;" />
-</div>
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="#" onclick="exportToSheets()">Export</a>
+    <a href="#" onclick="importFromSheets()">Import</a>
+  </div>
 
-<div class="filter-group">
-  <select id="filterCity"><option value="">City</option></select>
-  <select id="filterArea"><option value="">Area</option></select>
-  <select id="filterType"><option value="">Property Type</option></select>
-  <select id="filterStatus"><option value="">Lead Status</option></select>
-  <select id="filterTimeline"><option value="">Timeline</option></select>
-  <select id="filterBudget"><option value="">Budget</option></select>
-  <button class="btn" onclick="clearFilters()">Clear Filters</button>
-</div>
+  <div style="padding: 20px;">
+    <input type="text" id="searchInput" placeholder="Search leads..." style="width: 300px;" />
+  </div>
 
-<div id="adminActions" style="display:none">
-  <label><input type="checkbox" id="selectAllLeads" /> Select All</label>
-  <button class="btn" onclick="bulkDeleteLeads()">🗑 Bulk Delete</button>
-</div>
+  <div class="filter-group">
+    <select id="filterCity"><option value="">City</option></select>
+    <select id="filterArea"><option value="">Area</option></select>
+    <select id="filterType"><option value="">Property Type</option></select>
+    <select id="filterStatus"><option value="">Lead Status</option></select>
+    <select id="filterTimeline"><option value="">Timeline</option></select>
+    <select id="filterBudget"><option value="">Budget</option></select>
+    <button class="btn" onclick="clearFilters()">Clear Filters</button>
+  </div>
 
-<div id="leadsContainer"></div>
+  <div id="adminActions" style="display:none; padding: 0 20px;">
+    <label><input type="checkbox" id="selectAllLeads" /> Select All</label>
+    <button class="btn" onclick="bulkDeleteLeads()">🗑 Bulk Delete</button>
+  </div>
 
-<script>
-  const db = new PouchDB("crm_leads");
-  const currentUser = localStorage.getItem("repName") || "Unknown";
-  const isAdmin = currentUser === "Admin";
-  document.getElementById("adminActions").style.display = isAdmin ? 'block' : 'none';
+  <div id="leadsContainer" style="padding: 20px;"></div>
 
-  document.getElementById("searchInput").oninput = () => loadLeads();
-  document.querySelectorAll("select").forEach(select => select.onchange = loadLeads);
-  document.getElementById("selectAllLeads").onchange = function() {
-    document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = this.checked);
-  };
+  <script>
+    const db = new PouchDB("crm_leads");
+    const currentUser = localStorage.getItem("repName") || "Unknown";
+    const isAdmin = currentUser === "Admin";
+    document.getElementById("adminActions").style.display = isAdmin ? 'block' : 'none';
 
-  async function loadLeads() {
-    const res = await db.allDocs({ include_docs: true });
-    const leads = res.rows.map(r => r.doc);
-    const filters = {
-      search: document.getElementById("searchInput").value.toLowerCase(),
-      city: document.getElementById("filterCity").value,
-      area: document.getElementById("filterArea").value,
-      type: document.getElementById("filterType").value,
-      status: document.getElementById("filterStatus").value,
-      timeline: document.getElementById("filterTimeline").value,
-      budget: document.getElementById("filterBudget").value,
+    document.getElementById("searchInput").oninput = () => loadLeads();
+    document.querySelectorAll("select").forEach(select => select.onchange = loadLeads);
+    document.getElementById("selectAllLeads").onchange = function() {
+      document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = this.checked);
     };
 
-    const filtered = leads.filter(doc => {
-      return (!filters.search || Object.values(doc).join(" ").toLowerCase().includes(filters.search)) &&
-             (!filters.city || doc.City === filters.city) &&
-             (!filters.area || doc.Area === filters.area) &&
-             (!filters.type || doc["Property Types"] === filters.type) &&
-             (!filters.status || doc["Lead Status"] === filters.status) &&
-             (!filters.timeline || doc.Timeline === filters.timeline) &&
-             (!filters.budget || doc.Budget === filters.budget);
-    });
+    async function loadLeads() {
+      const res = await db.allDocs({ include_docs: true });
+      const leads = res.rows.map(r => r.doc);
+      const filters = {
+        search: document.getElementById("searchInput").value.toLowerCase(),
+        city: document.getElementById("filterCity").value,
+        area: document.getElementById("filterArea").value,
+        type: document.getElementById("filterType").value,
+        status: document.getElementById("filterStatus").value,
+        timeline: document.getElementById("filterTimeline").value,
+        budget: document.getElementById("filterBudget").value,
+      };
 
-    renderLeads(filtered);
-    populateFilters(leads);
-  }
+      const filtered = leads.filter(doc => {
+        return (!filters.search || Object.values(doc).join(" ").toLowerCase().includes(filters.search)) &&
+               (!filters.city || doc.City === filters.city) &&
+               (!filters.area || doc.Area === filters.area) &&
+               (!filters.type || doc["Property Types"] === filters.type) &&
+               (!filters.status || doc["Lead Status"] === filters.status) &&
+               (!filters.timeline || doc.Timeline === filters.timeline) &&
+               (!filters.budget || doc.Budget === filters.budget);
+      });
 
-  function populateFilters(leads) {
-    const fields = ["City", "Area", "Property Types", "Lead Status", "Timeline", "Budget"];
-    fields.forEach(field => {
-      const select = document.getElementById("filter" + field.replace(" ", ""));
-      const options = [...new Set(leads.map(l => l[field]).filter(Boolean))];
-      select.innerHTML = `<option value="">${field}</option>` + options.map(o => `<option>${o}</option>`).join('');
-    });
-  }
-
-  function renderLeads(leads) {
-    const container = document.getElementById("leadsContainer");
-    container.innerHTML = "";
-
-    leads.forEach(doc => {
-      const div = document.createElement("div");
-      div.className = "lead-card";
-
-      const statusClass = (doc["Lead Status"] || "new").toLowerCase();
-      const updated = new Date(doc.updated_at || doc.created_at || Date.now()).toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
-
-      div.innerHTML = `
-        ${isAdmin ? `<input type="checkbox" class="lead-checkbox" data-id="${doc._id}" />` : ""}
-        <strong>${doc.Name || "Unnamed"}</strong> (${doc.Phone || "N/A"})<br>
-        City: ${doc.City || "-"} | Area: ${doc.Area || "-"}<br>
-        Type: ${doc["Property Types"] || "-"} | Budget: ${doc.Budget || "-"}<br>
-        Timeline: ${doc.Timeline || "-"} | Rep: ${doc.assigned_to || "-"}<br>
-        <span class="badge ${statusClass}">${doc["Lead Status"] || "New"}</span>
-        <br>Last Updated: ${updated}<br>
-        <textarea style="width:100%;margin-top:5px;" placeholder="Notes">${doc.Comments || ""}</textarea>
-        <select>
-          <option>New</option><option>Contacted</option><option>Interested</option><option>Closed</option><option>Lost</option>
-        </select>
-        <div class="lead-actions">
-          <button class="btn" onclick="updateLead(this, '${doc._id}')">Save</button>
-        </div>
-      `;
-
-      container.appendChild(div);
-    });
-  }
-
-  async function updateLead(btn, id) {
-    const card = btn.closest(".lead-card");
-    const db = new PouchDB("crm_leads");
-    const lead = await db.get(id);
-    lead.Comments = card.querySelector("textarea").value;
-    lead["Lead Status"] = card.querySelector("select").value;
-    lead.updated_at = new Date().toISOString();
-    await db.put(lead);
-    alert("Lead updated");
-  }
-
-  async function bulkDeleteLeads() {
-    if (!confirm("Are you sure you want to delete selected leads?")) return;
-    const checkboxes = document.querySelectorAll(".lead-checkbox:checked");
-    const db = new PouchDB("crm_leads");
-    for (let cb of checkboxes) {
-      const lead = await db.get(cb.dataset.id);
-      await db.remove(lead);
+      renderLeads(filtered);
+      populateFilters(leads);
     }
-    alert("Selected leads deleted.");
-    loadLeads();
-  }
 
-  function clearFilters() {
-    document.querySelectorAll(".filter-group select").forEach(sel => sel.value = "");
-    document.getElementById("searchInput").value = "";
-    loadLeads();
-  }
+    function populateFilters(leads) {
+      const fields = ["City", "Area", "Property Types", "Lead Status", "Timeline", "Budget"];
+      fields.forEach(field => {
+        const select = document.getElementById("filter" + field.replace(" ", ""));
+        const options = [...new Set(leads.map(l => l[field]).filter(Boolean))];
+        select.innerHTML = `<option value="">${field}</option>` + options.map(o => `<option>${o}</option>`).join('');
+      });
+    }
 
-  loadLeads();
-</script>
+    function renderLeads(leads) {
+      const container = document.getElementById("leadsContainer");
+      container.innerHTML = "";
+
+      leads.forEach(doc => {
+        const div = document.createElement("div");
+        div.className = "lead-card";
+
+        const statusClass = (doc["Lead Status"] || "new").toLowerCase();
+        const updated = new Date(doc.updated_at || doc.created_at || Date.now()).toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
+
+        div.innerHTML = `
+          ${isAdmin ? `<input type="checkbox" class="lead-checkbox" data-id="${doc._id}" />` : ""}
+          <strong>${doc.Name || "Unnamed"}</strong> (${doc.Phone || "N/A"})<br>
+          City: ${doc.City || "-"} | Area: ${doc.Area || "-"}<br>
+          Type: ${doc["Property Types"] || "-"} | Budget: ${doc.Budget || "-"}<br>
+          Timeline: ${doc.Timeline || "-"} | Rep: ${doc.assigned_to || "-"}<br>
+          <span class="badge ${statusClass}">${doc["Lead Status"] || "New"}</span>
+          <br>Last Updated: ${updated}<br>
+          <textarea style="width:100%;margin-top:5px;" placeholder="Notes">${doc.Comments || ""}</textarea>
+          <select>
+            <option>New</option><option>Contacted</option><option>Interested</option><option>Closed</option><option>Lost</option>
+          </select>
+          <div class="lead-actions">
+            <button class="btn" onclick="updateLead(this, '${doc._id}')">Save</button>
+          </div>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    async function updateLead(btn, id) {
+      const card = btn.closest(".lead-card");
+      const lead = await db.get(id);
+      lead.Comments = card.querySelector("textarea").value;
+      lead["Lead Status"] = card.querySelector("select").value;
+      lead.updated_at = new Date().toISOString();
+      await db.put(lead);
+      alert("Lead updated");
+    }
+
+    async function bulkDeleteLeads() {
+      if (!confirm("Are you sure you want to delete selected leads?")) return;
+      const checkboxes = document.querySelectorAll(".lead-checkbox:checked");
+      for (let cb of checkboxes) {
+        const lead = await db.get(cb.dataset.id);
+        await db.remove(lead);
+      }
+      alert("Selected leads deleted.");
+      loadLeads();
+    }
+
+    function clearFilters() {
+      document.querySelectorAll(".filter-group select").forEach(sel => sel.value = "");
+      document.getElementById("searchInput").value = "";
+      loadLeads();
+    }
+
+    loadLeads();
+  </script>
 </body>
 </html>
-
-
-
-
