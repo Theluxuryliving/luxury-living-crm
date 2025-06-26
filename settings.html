@@ -46,6 +46,18 @@
       border-radius: 6px;
       cursor: pointer;
     }
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     table {
       width: 100%;
       margin-top: 20px;
@@ -60,6 +72,7 @@
 </head>
 <body>
 
+  <button class="back-button" onclick="window.location.href='dashboard.html'">⬅ Back to Dashboard</button>
   <h2>Settings Panel</h2>
 
   <div id="profileSection" class="section">
@@ -113,6 +126,15 @@
         document.getElementById('contact').value = user.contact || '';
         document.getElementById('cnic').value = user.cnic || '';
         document.getElementById('address').value = user.address || '';
+
+        // Enforce profile completion rule for default PIN or missing profile info
+        const missingInfo = !user.name || !user.dob || !user.contact || !user.cnic || !user.address;
+        const isDefaultPin = user.pin === '1234';
+
+        if (missingInfo || isDefaultPin || !user.profileComplete) {
+          alert('Please update your profile and set a new PIN to access the CRM. This is required once.');
+          document.querySelector('.back-button').style.display = 'none';
+        }
       } catch (err) {
         console.error('Error loading user profile:', err);
       }
@@ -126,7 +148,15 @@
       user.cnic = document.getElementById('cnic').value;
       user.address = document.getElementById('address').value;
       const newPin = document.getElementById('newPin').value;
+
       if (newPin) user.pin = newPin;
+
+      // Check for profile completion
+      if (user.name && user.dob && user.contact && user.cnic && user.address && user.pin !== '1234') {
+        user.profileComplete = true;
+        document.querySelector('.back-button').style.display = 'inline-block';
+      }
+
       await db.put(user);
       alert('Profile updated');
     }
