@@ -137,6 +137,7 @@
     <a href="Lead_status.html">Leads Status</a>
     <a href="#" onclick="exportToSheets()">Export</a>
     <a href="#" onclick="importFromSheets()">Import</a>
+    <a href="#" onclick="logout()">Logout</a>
   </div>
 
   <div style="padding: 20px;">
@@ -165,6 +166,12 @@
     const currentUser = localStorage.getItem("repName") || "Unknown";
     const isAdmin = currentUser === "Admin";
     document.getElementById("adminActions").style.display = isAdmin ? 'block' : 'none';
+
+    function logout() {
+      localStorage.clear();
+      alert("You have been logged out.");
+      window.location.href = "login.html";
+    }
 
     document.getElementById("searchInput").oninput = () => loadLeads();
     document.querySelectorAll("select").forEach(select => select.onchange = loadLeads);
