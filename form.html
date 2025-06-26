@@ -1,197 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Add New Client</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Add New Lead</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0b0b0b;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
       color: #fff;
       margin: 0;
       padding: 0;
     }
-    .container {
-      max-width: 800px;
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    .form-container {
+      max-width: 600px;
       margin: 40px auto;
       background: #1a1a1a;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #333;
     }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      color: gold;
+    .form-container h2 {
       text-align: center;
-      margin-bottom: 30px;
-    }
-    form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
+      color: gold;
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px;
-      border: 1px solid gold;
+      padding: 12px;
+      margin: 8px 0 20px;
+      border: 1px solid #ccc;
       border-radius: 6px;
-      background-color: #111;
+      background: #333;
       color: white;
-      font-size: 14px;
+      font-size: 16px;
     }
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    .full-width {
-      grid-column: span 2;
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
     }
     button {
-      grid-column: span 2;
-      padding: 15px;
-      font-size: 16px;
-      font-weight: bold;
       background-color: gold;
-      color: #0b0b0b;
+      color: black;
       border: none;
+      padding: 14px 20px;
       border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      width: 100%;
+      font-size: 16px;
     }
     button:hover {
-      background-color: #e6c200;
+      background-color: #bfa100;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Add New Client</h1>
+
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="deals.html">Deals</a>
+    <a href="projects_inventory.html">Projects</a>
+    <a href="sales_flow.html">Sales Flow</a>
+    <a href="lead_status.html">Lead Status</a>
+  </div>
+
+  <div class="form-container">
+    <h2>Add New Lead</h2>
     <form id="leadForm">
-      <div>
-        <label for="name">Full Name</label>
-        <input type="text" id="name" required>
-      </div>
-      <div>
-        <label for="email">Email</label>
-        <input type="email" id="email">
-      </div>
-      <div>
-        <label for="phone">Phone</label>
-        <input type="tel" id="phone" required>
-      </div>
-      <div>
-        <label for="city">City</label>
-        <select id="city">
-          <option>Lahore</option>
-          <option>Karachi</option>
-          <option>Islamabad</option>
-          <option>Rawalpindi</option>
-          <option>Multan</option>
-          <option>Faisalabad</option>
-          <option>Peshawar</option>
-          <option>Quetta</option>
-          <option>Others</option>
-        </select>
-      </div>
-      <div>
-        <label for="country">Country</label>
-        <select id="country">
-          <option>Pakistan</option>
-          <option>US</option>
-          <option>UK</option>
-          <option>Europe</option>
-          <option>Africa</option>
-          <option>Middle East</option>
-          <option>China</option>
-          <option>Japan</option>
-          <option>Asia</option>
-        </select>
-      </div>
-      <div>
-        <label for="propertyType">Property Types</label>
-        <input type="text" id="propertyType" placeholder="e.g. 2 Bedroom Apartment, Villa">
-      </div>
-      <div>
-        <label for="area">Area</label>
-        <select id="area">
-          <option>DHA</option>
-          <option>Bahria</option>
-          <option>Canal Bank Road</option>
-          <option>Gulberg</option>
-          <option>Model Town</option>
-          <option>Garden Town</option>
-          <option>Ruda</option>
-          <option>Etihad Town</option>
-          <option>Johar Town</option>
-          <option>Valancia</option>
-          <option>LDA</option>
-          <option>Wapda Town</option>
-          <option>Others</option>
-        </select>
-      </div>
-      <div>
-        <label for="budget">Budget (in million)</label>
-        <input type="number" id="budget" min="1" placeholder="e.g. 15">
-      </div>
-      <div>
-        <label for="status">Property Status</label>
-        <select id="status">
-          <option>Ready to Move</option>
-          <option>Off-Plan</option>
-        </select>
-      </div>
-      <div>
-        <label for="timeline">Timeline</label>
-        <input type="text" id="timeline" placeholder="e.g. Immediately, 3 months">
-      </div>
-      <div>
-        <label for="source">Lead Source</label>
-        <input type="text" id="source" placeholder="e.g. Facebook">
-      </div>
-      <div class="full-width">
-        <label for="comments">Comments</label>
-        <textarea id="comments"></textarea>
-      </div>
+      <label for="name">Client Name</label>
+      <input type="text" name="name" required />
+
+      <label for="email">Email</label>
+      <input type="email" name="email" />
+
+      <label for="phone">Phone</label>
+      <input type="tel" name="phone" required />
+
+      <label for="city">City</label>
+      <select name="city" required>
+        <option value="">Select City</option>
+        <option>Lahore</option><option>Karachi</option><option>Islamabad</option>
+        <option>Rawalpindi</option><option>Peshawar</option><option>Quetta</option>
+        <option>Multan</option><option>Faisalabad</option>
+      </select>
+
+      <label for="country">Country</label>
+      <select name="country" required>
+        <option value="">Select Country</option>
+        <option>Pakistan</option><option>US</option><option>UK</option>
+        <option>Europe</option><option>Africa</option><option>Middle East</option>
+        <option>China</option><option>Japan</option><option>Asia</option>
+      </select>
+
+      <label for="property_types">Property Types</label>
+      <input type="text" name="property_types" placeholder="e.g. Apartment, Villa" />
+
+      <label for="area">Area</label>
+      <select name="area" required>
+        <option value="">Select Area</option>
+        <option>DHA</option><option>Bahria</option><option>Canal Bank Road</option>
+        <option>Gulberg</option><option>Model Town</option><option>Garden Town</option>
+        <option>Ruda</option><option>Etihad Town</option><option>Johar Town</option>
+        <option>Valancia</option><option>LDA</option><option>Wapda Town</option>
+        <option>Others (please specify)</option>
+      </select>
+
+      <label for="budget">Budget (Millions)</label>
+      <input type="number" name="budget" min="1" max="500" required />
+
+      <label for="property_status">Property Status</label>
+      <select name="property_status">
+        <option>Ready to Move</option><option>Off-Plan</option><option>Sell</option><option>Rent-Landlord</option><option>Rent-Tenant</option>
+      </select>
+
+      <label for="timeline">Timeline</label>
+      <select name="timeline">
+        <option>Immediately</option><option>Within 3 months</option>
+        <option>6 months</option><option>Later</option>
+      </select>
+
+      <label for="lead_source">Lead Source</label>
+      <input type="text" name="lead_source" placeholder="e.g. Facebook, Website" />
+
+      <label for="comments">Comments</label>
+      <textarea name="comments" rows="4" placeholder="Additional notes..."></textarea>
+
       <button type="submit">Submit Lead</button>
     </form>
   </div>
 
   <script>
-    document.getElementById('leadForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const data = {
-        Name: document.getElementById('name').value,
-        Email: document.getElementById('email').value,
-        Phone: document.getElementById('phone').value,
-        City: document.getElementById('city').value,
-        Country: document.getElementById('country').value,
-        'Property Types': document.getElementById('propertyType').value,
-        Area: document.getElementById('area').value,
-        Budget: document.getElementById('budget').value + ' million',
-        'Property Status': document.getElementById('status').value,
-        Timeline: document.getElementById('timeline').value,
-        'Lead Source': document.getElementById('source').value,
-        Comments: document.getElementById('comments').value,
-        updated_at: new Date().toISOString(),
-        _id: new Date().toISOString()
-      };
+    const db = new PouchDB('crm_leads');
+    const currentUser = localStorage.getItem("repName") || "Admin";
+    const isAdmin = currentUser === "Admin";
+    const agents = ["Atif Z", "Atif A", "Talha A", "Talal Y"];
 
-      try {
-        const db = new PouchDB('crm_leads');
-        await db.put(data);
-        alert('Lead saved locally. It will sync soon.');
-        document.getElementById('leadForm').reset();
-      } catch (err) {
-        alert('Error saving lead.');
-        console.error(err);
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const doc = {};
+
+      formData.forEach((val, key) => doc[key] = val);
+      doc._id = new Date().toISOString();
+      doc.created_at = doc.updated_at = new Date().toISOString();
+      doc.status = 'new';
+
+      if (isAdmin) {
+        const randomIndex = Math.floor(Math.random() * agents.length);
+        doc.assigned_to = agents[randomIndex];
+      } else {
+        doc.assigned_to = currentUser;
       }
+
+      await db.put(doc);
+      alert("Lead saved successfully.");
+      window.location.href = "leads.html";
     });
   </script>
 </body>
