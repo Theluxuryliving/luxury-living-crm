@@ -5,69 +5,145 @@
   <title>CRM - Deals & Payments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-<button onclick="exportToSheets()">Export</button>
-<button onclick="importFromSheets()">Import</button>
-<script src="sheets.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, select, textarea { display: block; margin: 5px 0; padding: 5px; width: 100%; }
-    .deal-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
-    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin-top: 10px; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #0d0d0d;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+    }
+    .form-card, .deal-card {
+      background: #1a1a1a;
+      border: 1px solid gold;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.05);
+    }
+    h2, h3 {
+      color: gold;
+      border-bottom: 1px solid gold;
+      padding-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
+    }
+    button {
+      background: linear-gradient(to right, #ffd700, #ffcc00);
+      color: black;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body>
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="deals.html">Deals</a>
+    <a href="projects_inventory.html">Inventory</a>
+    <a href="sales_flow.html">Sales Flow</a>
+    <a href="lead_status.html">Lead Status</a>
+    <a href="#" onclick="exportToSheets()">Export</a>
+    <a href="#" onclick="importFromSheets()">Import</a>
+  </div>
 
-<!-- CRM Navigation Bar -->
-<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
-  <strong>CRM Navigation:</strong>
-  <a href="leads.html" style="margin:0 10px;">Leads</a>
-  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
-  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
-  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
-  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
-  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
-</div>
+  <div class="container">
+    <div class="form-card">
+      <h3>Create Deal</h3>
+      <form id="dealForm">
+        <label>Lead:</label>
+        <select name="lead_id" id="leadSelect" required></select>
 
-<h1>CRM - Deals & Payments</h1>
+        <label>Unit:</label>
+        <select name="unit_id" id="unitSelect" required></select>
 
-<form id="dealForm">
-  <h3>Create Deal</h3>
-  <select name="lead_id" id="leadSelect" required></select>
-  <select name="unit_id" id="unitSelect" required></select>
-  <input type="number" name="sale_price" placeholder="Sale Price" required />
-  <input type="number" name="commission" placeholder="Commission" required />
-  <textarea name="notes" placeholder="Notes"></textarea>
-  <input type="number" name="token_amount" placeholder="Token Amount Received" />
-  <select name="payment_template" id="templateSelect" style="display:none;"></select>
-  <button type="submit">Save Deal</button>
-</form>
+        <label>Primary Agent:</label>
+        <select name="primary_agent" id="primaryAgent" required></select>
 
-<div id="dealsContainer"></div>
+        <label>Secondary Agent (optional):</label>
+        <select name="secondary_agent" id="secondaryAgent"></select>
 
+        <label>Sale Price:</label>
+        <input type="number" name="sale_price" required />
+
+        <label>Commission (Total):</label>
+        <input type="number" name="commission" required />
+
+        <label>Token Amount Received:</label>
+        <input type="number" name="token_amount" />
+
+        <label>Payment Template (if token received):</label>
+        <select name="payment_template" id="templateSelect" style="display:none;"></select>
+
+        <label>Notes:</label>
+        <textarea name="notes"></textarea>
+
+        <button type="submit">Save Deal</button>
+      </form>
+    </div>
+
+    <div class="deal-card">
+      <h3>All Deals</h3>
+      <div id="dealsContainer"></div>
+    </div>
+  </div>
+
+<script src="sheets.js"></script>
 <script>
   const dbLeads = new PouchDB('crm_leads');
   const dbUnits = new PouchDB('crm_inventory');
   const dbDeals = new PouchDB('crm_deals');
   const dbTemplates = new PouchDB('crm_payment_templates');
   const dbPayments = new PouchDB('crm_payments');
+  const dbUsers = new PouchDB('crm_users');
 
   const form = document.getElementById('dealForm');
   const leadSelect = document.getElementById('leadSelect');
   const unitSelect = document.getElementById('unitSelect');
   const templateSelect = document.getElementById('templateSelect');
   const dealsContainer = document.getElementById('dealsContainer');
+  const primaryAgent = document.getElementById('primaryAgent');
+  const secondaryAgent = document.getElementById('secondaryAgent');
 
   async function loadOptions() {
     const leads = await dbLeads.allDocs({ include_docs: true });
     leads.rows.forEach(({ doc }) => {
-      if (["contacted", "interested"].includes(doc.status)) {
-        const opt = document.createElement("option");
-        opt.value = doc._id;
-        opt.textContent = doc.name + " (" + doc.status + ")";
-        leadSelect.appendChild(opt);
-      }
+      const opt = document.createElement("option");
+      opt.value = doc._id;
+      opt.textContent = doc.Name + " - " + (doc.Phone || '');
+      leadSelect.appendChild(opt);
     });
 
     const units = await dbUnits.allDocs({ include_docs: true });
@@ -76,8 +152,6 @@
         const opt = document.createElement("option");
         opt.value = doc._id;
         opt.textContent = doc.unit_number + " - " + doc.unit_type;
-        opt.dataset.project = doc.project_id;
-        opt.dataset.unitId = doc._id;
         unitSelect.appendChild(opt);
       }
     });
@@ -88,6 +162,21 @@
       opt.value = doc._id;
       opt.textContent = doc.name;
       templateSelect.appendChild(opt);
+    });
+
+    const users = await dbUsers.allDocs({ include_docs: true });
+    users.rows.forEach(({ doc }) => {
+      if (doc.role === 'sales_rep' || doc.role === 'manager') {
+        const opt1 = document.createElement("option");
+        opt1.value = doc.name;
+        opt1.textContent = doc.name;
+        primaryAgent.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = doc.name;
+        opt2.textContent = doc.name;
+        secondaryAgent.appendChild(opt2);
+      }
     });
   }
 
@@ -102,7 +191,6 @@
     data.forEach((val, key) => deal[key] = val);
     deal._id = new Date().toISOString();
     deal.created_at = new Date().toISOString();
-    deal.closed_by = localStorage.getItem("repName") || "Unknown";
 
     const lead = await dbLeads.get(deal.lead_id);
     lead.status = "matured";
@@ -130,28 +218,30 @@
         await dbPayments.put(payment);
       }
     }
+
     form.reset();
     templateSelect.style.display = 'none';
     loadDeals();
   };
 
   async function loadDeals() {
-    dealsContainer.innerHTML = '<h3>All Deals</h3>';
-    const deals = await dbDeals.allDocs({ include_docs: true });
-    deals.rows.forEach(({ doc }) => {
-      const div = document.createElement("div");
-      div.className = "deal-card";
-      div.innerHTML = `<strong>Lead:</strong> ${doc.lead_id}<br>
-                       <strong>Unit:</strong> ${doc.unit_id}<br>
-                       <strong>Price:</strong> ${doc.sale_price}<br>
-                       <strong>Commission:</strong> ${doc.commission}`;
-      dealsContainer.appendChild(div);
-    });
+    const res = await dbDeals.allDocs({ include_docs: true });
+    dealsContainer.innerHTML = res.rows.map(({ doc }) => `
+      <div class="form-card">
+        <strong>Lead:</strong> ${doc.lead_id}<br>
+        <strong>Unit:</strong> ${doc.unit_id}<br>
+        <strong>Primary Agent:</strong> ${doc.primary_agent}<br>
+        <strong>Secondary Agent:</strong> ${doc.secondary_agent || '-'}<br>
+        <strong>Sale Price:</strong> PKR ${doc.sale_price}<br>
+        <strong>Commission:</strong> PKR ${doc.commission}<br>
+        <strong>Token Received:</strong> PKR ${doc.token_amount || '0'}<br>
+        <em>${doc.notes || ''}</em>
+      </div>
+    `).join('');
   }
 
   loadOptions();
   loadDeals();
 </script>
-
 </body>
 </html>
