@@ -1,13 +1,13 @@
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAtraDpVoYu0pmDAl84KItv1NaRetAhOJJgUFr9gVHHkgHEwsW9-8uh0SXltNQPt08Fg/exec';
 
-// This function exports data to Google Sheets
+// Export data to Google Sheets
 window.exportToSheets = async function () {
   try {
     const db = new PouchDB("crm_leads");
     const allDocs = await db.allDocs({ include_docs: true });
     const leads = allDocs.rows.map(row => row.doc);
 
-    const response = await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+    const response = await fetch(SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({ leads }),
       headers: {
@@ -23,10 +23,10 @@ window.exportToSheets = async function () {
   }
 };
 
-// This function imports data from Google Sheets
+// Import data from Google Sheets
 window.importFromSheets = async function () {
   try {
-    const response = await fetch(GOOGLE_SHEET_WEBAPP_URL + "?action=import");
+    const response = await fetch(SCRIPT_URL + "?action=import");
     const data = await response.json();
 
     const db = new PouchDB("crm_leads");
@@ -54,5 +54,3 @@ window.importFromSheets = async function () {
     alert("Import Failed: " + error.message);
   }
 };
-
-
