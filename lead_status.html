@@ -2,62 +2,250 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CRM - Lead Status Tracker</title>
+  <title>CRM - Lead Status & Agent Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-<button onclick="exportToSheets()">Export</button>
-<button onclick="importFromSheets()">Import</button>
-
-<script src="sheets.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .stage-card { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin: 10px 0; background: #f9f9f9; }
-    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    h2, h3 {
+      color: gold;
+      margin-top: 30px;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    select, input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
+    }
+    .stage-column {
+      margin-bottom: 40px;
+      border: 1px solid #333;
+      padding: 15px;
+      border-radius: 8px;
+      background: #1a1a1a;
+    }
+    .lead-card {
+      background: #222;
+      border: 1px solid gold;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .interaction-log {
+      font-size: 12px;
+      margin-top: 5px;
+      color: #aaa;
+    }
+    button {
+      background: gold;
+      border: none;
+      color: black;
+      font-weight: bold;
+      padding: 5px 10px;
+      margin: 5px 3px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    canvas {
+      background: #fff;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
 
-<!-- CRM Navigation Bar -->
-<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
-  <strong>CRM Navigation:</strong>
-  <a href="leads.html" style="margin:0 10px;">Leads</a>
-  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
-  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
-  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
-  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
-  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
+<div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="settings.html">⚙️ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
 </div>
 
-<h1>Lead Status Tracker</h1>
+<h2>Lead Status Tracker & Agent Performance</h2>
+
+<div class="filters">
+  <select id="filterAgent"><option value="">All Agents</option></select>
+  <input type="date" id="filterFrom" />
+  <input type="date" id="filterTo" />
+  <button onclick="loadStatus()">Apply Filters</button>
+</div>
 
 <div id="statusContainer"></div>
 
+<canvas id="followupChart" height="120"></canvas>
+<canvas id="conversionChart" height="120"></canvas>
+<canvas id="weeklyChart" height="120"></canvas>
+
 <script>
   const dbLeads = new PouchDB('crm_leads');
+  const dbActivities = new PouchDB('crm_activities');
+  const dbUsers = new PouchDB('crm_users');
 
-  async function loadLeadStatus() {
-    const result = await dbLeads.allDocs({ include_docs: true });
-    const leads = result.rows.map(r => r.doc);
-    const statuses = ["new", "contacted", "interested", "matured", "closed", "lost"];
+  const statuses = ["new", "contacted", "interested", "matured", "closed", "lost"];
+  const agentFilter = document.getElementById('filterAgent');
+  const fromInput = document.getElementById('filterFrom');
+  const toInput = document.getElementById('filterTo');
 
-    const grouped = {};
-    statuses.forEach(status => grouped[status] = []);
-    leads.forEach(lead => {
-      if (grouped[lead.status]) grouped[lead.status].push(lead);
+  async function loadAgents() {
+    const res = await dbUsers.allDocs({ include_docs: true });
+    res.rows.forEach(({ doc }) => {
+      if (doc.role === 'sales_rep' || doc.role === 'manager') {
+        const opt = document.createElement('option');
+        opt.value = doc.name;
+        opt.textContent = doc.name;
+        agentFilter.appendChild(opt);
+      }
     });
-
-    const container = document.getElementById('statusContainer');
-    container.innerHTML = statuses.map(status => `
-      <div class="stage-card">
-        <h3>${status.toUpperCase()} (${grouped[status].length})</h3>
-        ${grouped[status].map(l => `<div><strong>${l.name}</strong> - ${l.contact_number}</div>`).join('') || '<i>No leads</i>'}
-      </div>
-    `).join('');
   }
 
-  loadLeadStatus();
+  async function logInteraction(leadId, type) {
+    const note = prompt(`Add optional note for ${type} follow-up:`) || '';
+    await dbActivities.put({
+      _id: new Date().toISOString(),
+      lead_id: leadId,
+      type,
+      agent: localStorage.getItem('repName') || 'Unknown',
+      note,
+      timestamp: new Date().toISOString()
+    });
+    alert(`${type} logged`);
+    loadStatus();
+  }
+
+  async function loadStatus() {
+    const agent = agentFilter.value;
+    const from = new Date(fromInput.value || '2000-01-01');
+    const to = new Date(toInput.value || '2100-12-31');
+
+    const leadsRes = await dbLeads.allDocs({ include_docs: true });
+    const activityRes = await dbActivities.allDocs({ include_docs: true });
+
+    const leads = leadsRes.rows.map(r => r.doc).filter(l => {
+      const created = new Date(l.created_at || l._id);
+      const matchAgent = !agent || l.assigned_to === agent;
+      const inDateRange = created >= from && created <= to;
+      return matchAgent && inDateRange;
+    });
+
+    const grouped = {};
+    statuses.forEach(s => grouped[s] = []);
+    leads.forEach(l => { if (grouped[l.status]) grouped[l.status].push(l); });
+
+    const container = document.getElementById('statusContainer');
+    container.innerHTML = '';
+
+    const agentStats = {};
+    const weeklyData = {};
+
+    statuses.forEach(status => {
+      const stage = grouped[status];
+      const block = document.createElement('div');
+      block.className = 'stage-column';
+      block.innerHTML = `<h3>${status.toUpperCase()} (${stage.length})</h3>`;
+      stage.forEach(lead => {
+        const actLogs = activityRes.rows.filter(a => a.doc.lead_id === lead._id);
+        const card = document.createElement('div');
+        card.className = 'lead-card';
+        card.innerHTML = `
+          <strong>${lead.Name}</strong> (${lead.Phone || '-'})<br>
+          <small>Assigned: ${lead.assigned_to || 'Unassigned'}</small><br>
+          <button onclick="logInteraction('${lead._id}', 'Call')">📞</button>
+          <button onclick="logInteraction('${lead._id}', 'WhatsApp')">💬</button>
+          <button onclick="logInteraction('${lead._id}', 'Meeting')">📅</button>
+          <div class="interaction-log">
+            ${actLogs.map(a => `${new Date(a.doc.timestamp).toLocaleDateString()}: ${a.doc.type} - ${a.doc.note}`).join('<br>') || '<i>No activity yet</i>'}
+          </div>
+        `;
+        block.appendChild(card);
+
+        // Collect stats
+        const assigned = lead.assigned_to;
+        if (!agentStats[assigned]) agentStats[assigned] = { total: 0, followups: 0, closed: 0 };
+        agentStats[assigned].total++;
+        if (lead.status === 'closed') agentStats[assigned].closed++;
+        agentStats[assigned].followups += actLogs.length;
+
+        actLogs.forEach(a => {
+          const day = new Date(a.doc.timestamp).toISOString().slice(0, 10);
+          weeklyData[day] = (weeklyData[day] || 0) + 1;
+        });
+      });
+      container.appendChild(block);
+    });
+
+    drawCharts(agentStats, weeklyData);
+  }
+
+  function drawCharts(stats, weekly) {
+    const agents = Object.keys(stats);
+    const followupCounts = agents.map(a => stats[a].followups);
+    const conversionRates = agents.map(a => ((stats[a].closed / stats[a].total) * 100).toFixed(1));
+
+    const days = Object.keys(weekly);
+    const dayCounts = Object.values(weekly);
+
+    new Chart(document.getElementById('followupChart'), {
+      type: 'bar',
+      data: {
+        labels: agents,
+        datasets: [{ label: 'Follow-ups', data: followupCounts, backgroundColor: 'gold' }]
+      },
+      options: { plugins: { title: { display: true, text: 'Follow-ups per Agent' } } }
+    });
+
+    new Chart(document.getElementById('conversionChart'), {
+      type: 'pie',
+      data: {
+        labels: agents,
+        datasets: [{ label: 'Conversion Rate %', data: conversionRates, backgroundColor: ['lime', 'teal', 'orange', 'tomato'] }]
+      },
+      options: { plugins: { title: { display: true, text: 'Agent Conversion Rates' } } }
+    });
+
+    new Chart(document.getElementById('weeklyChart'), {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{ label: 'Follow-ups', data: dayCounts, borderColor: 'gold', fill: false }]
+      },
+      options: { plugins: { title: { display: true, text: 'Weekly Activity Trend' } } }
+    });
+  }
+
+  loadAgents().then(loadStatus);
 </script>
 
 </body>
