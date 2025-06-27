@@ -2,14 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRM Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- External Libraries -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- Styles -->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
     body { font-family: 'Poppins', sans-serif; background: #0d0d0d; color: #fff; margin: 0; padding: 0; }
     .navbar { background: #111; padding: 15px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid gold; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1); }
     .navbar a { color: gold; text-decoration: none; font-weight: 600; transition: color 0.2s; }
@@ -20,6 +24,19 @@
     .tab-btn.active { background: gold; color: black; font-weight: bold; }
     .tab-content { display: none; padding: 20px; }
     .tab-content.active { display: block; }
+    .filters { text-align: center; margin-bottom: 20px; }
+    .filters input, .filters select, .filters button { margin: 5px; padding: 8px; border-radius: 6px; border: none; }
+    .download-btn { background: gold; color: black; font-weight: bold; cursor: pointer; }
+    .dashboard-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+    .chart-box { background: #1a1a1a; border: 1px solid gold; border-radius: 10px; padding: 20px; width: 400px; }
+    .table-container { margin: 20px auto; background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid gold; max-width: 1000px; }
+    table { width: 100%; border-collapse: collapse; color: white; }
+    th, td { padding: 10px; border: 1px solid gold; text-align: left; }
+    ol { padding-left: 20px; }
+    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid gold; color: white; padding: 20px; z-index: 1000; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .modal-header h3 { margin: 0; color: gold; }
+    .modal button { padding: 8px 12px; background: gold; color: black; border: none; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -45,39 +62,57 @@
   </div>
 
   <div id="dashboard" class="tab-content active">
-   <div class="filters">
-    From: <input type="date" id="startDate" />
-    To: <input type="date" id="endDate" />
-    Agent: <select id="agentFilter"><option value="">All Agents</option></select>
-    <button onclick="loadDashboard()">Apply</button>
-    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
-  </div>
-  <div class="dashboard-container">
-    <div class="chart-box"><canvas id="statusChart"></canvas></div>
-    <div class="chart-box"><canvas id="conversionChart"></canvas></div>
-    <div class="chart-box"><canvas id="agentPieChart"></canvas></div>
-  </div>
-  <div class="table-container">
-    <h3>Performance Summary</h3>
-    <table><thead><tr><th>Agent</th><th>Total Leads</th><th>Contacted</th><th>Closed</th><th>Conversion %</th></tr></thead><tbody id="performanceTable"></tbody></table>
-  </div>
-  <div class="table-container">
-    <h3>Average Conversion Time</h3>
-    <table><thead><tr><th>Agent</th><th>Avg Conversion Time</th></tr></thead><tbody id="avgConversionTimeTable"></tbody></table>
-  </div>
-  <div class="table-container">
-    <h3>Top Performing Agents</h3>
-    <ol id="topAgentsList"></ol>
+    <div class="filters">
+      From: <input type="date" id="startDate" />
+      To: <input type="date" id="endDate" />
+      Agent: <select id="agentFilter"><option value="">All Agents</option></select>
+      <button onclick="loadDashboard()">Apply</button>
+      <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+    </div>
+    <div class="dashboard-container">
+      <div class="chart-box"><canvas id="statusChart"></canvas></div>
+      <div class="chart-box"><canvas id="conversionChart"></canvas></div>
+      <div class="chart-box"><canvas id="agentPieChart"></canvas></div>
+    </div>
+    <div class="table-container">
+      <h3>Performance Summary</h3>
+      <table><thead><tr><th>Agent</th><th>Total Leads</th><th>Contacted</th><th>Closed</th><th>Conversion %</th></tr></thead><tbody id="performanceTable"></tbody></table>
+    </div>
+    <div class="table-container">
+      <h3>Average Conversion Time</h3>
+      <table><thead><tr><th>Agent</th><th>Avg Conversion Time</th></tr></thead><tbody id="avgConversionTimeTable"></tbody></table>
+    </div>
+    <div class="table-container">
+      <h3>Top Performing Agents</h3>
+      <ol id="topAgentsList"></ol>
+    </div>
   </div>
 
-<!-- ✅ Agent Drill-down Modal Inserted Below -->
-<!-- (Modal + Script already applied above in previous step and retained here) -->
-<!-- 🔄 Load core dashboard logic and modal interactivity -->
-<!-- ✅ Agent Drill-down Modal Inserted Below -->
-<!-- (Modal + Script already applied above in previous step and retained here) -->
-<!-- 🔄 Load core dashboard logic and modal interactivity -->
-<script>
+  <div id="calendar" class="tab-content">
+    <iframe src="calendar.html" style="width: 100%; height: 700px; border: none;"></iframe>
+  </div>
+
+  <div id="followups" class="tab-content">
+    <iframe src="followups.html" style="width: 100%; height: 700px; border: none;"></iframe>
+  </div>
+
+  <div id="agentModal" class="modal">
+    <div class="modal-header">
+      <h3>Agent Overview: <span id="modalAgentName"></span></h3>
+      <button onclick="document.getElementById('agentModal').style.display='none'">✖</button>
+    </div>
+    <h4>Lead Stats</h4>
+    <ul id="modalLeadStats"></ul>
+    <h4>Interactions</h4>
+    <ul id="modalInteractionStats"></ul>
+    <h4>Avg. Conversion Time</h4>
+    <p id="modalAvgConversion"></p>
+  </div>
+
+  <script>
+// Full dashboard logic starts here
 const db = new PouchDB("crm_leads");
+let statusChart, conversionChart, agentChart;
 
 function logout() {
   localStorage.removeItem("repName");
@@ -121,9 +156,10 @@ function populateAgentFilter(leads) {
 }
 
 function drawStatusChart(leads) {
+  if (statusChart) statusChart.destroy();
   const counts = {};
   leads.forEach(l => { const s = l["Lead Status"] || "New"; counts[s] = (counts[s] || 0) + 1; });
-  new Chart(document.getElementById("statusChart"), {
+  statusChart = new Chart(document.getElementById("statusChart"), {
     type: 'pie',
     data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['gold', '#007bff', '#28a745', '#6c757d', '#dc3545'] }] },
     options: { plugins: { title: { display: true, text: 'Lead Status Distribution' } } }
@@ -131,6 +167,7 @@ function drawStatusChart(leads) {
 }
 
 function drawConversionChart(leads) {
+  if (conversionChart) conversionChart.destroy();
   const counts = {};
   leads.forEach(l => {
     const rep = l.assigned_to || "Unassigned";
@@ -140,7 +177,7 @@ function drawConversionChart(leads) {
   });
   const labels = Object.keys(counts);
   const data = labels.map(k => ((counts[k].closed / counts[k].total) * 100).toFixed(1));
-  new Chart(document.getElementById("conversionChart"), {
+  conversionChart = new Chart(document.getElementById("conversionChart"), {
     type: 'bar',
     data: { labels, datasets: [{ label: '% Converted', data, backgroundColor: '#17a2b8' }] },
     options: { plugins: { title: { display: true, text: 'Conversion Rate by Agent' } }, scales: { y: { beginAtZero: true, max: 100 } } }
@@ -148,9 +185,10 @@ function drawConversionChart(leads) {
 }
 
 function drawAgentPieChart(leads) {
+  if (agentChart) agentChart.destroy();
   const reps = {};
   leads.forEach(l => { const rep = l.assigned_to || "Unassigned"; reps[rep] = (reps[rep] || 0) + 1; });
-  new Chart(document.getElementById("agentPieChart"), {
+  agentChart = new Chart(document.getElementById("agentPieChart"), {
     type: 'pie',
     data: { labels: Object.keys(reps), datasets: [{ data: Object.values(reps), backgroundColor: ['gold', '#ffc107', '#6c757d', '#007bff', '#28a745'] }] },
     options: { plugins: { title: { display: true, text: 'Leads per Agent' } } }
@@ -208,6 +246,7 @@ function downloadPDF() {
   const doc = new jsPDF('p', 'pt', 'a4');
   const padding = 20;
   const scale = 2;
+
   function renderElementToPDF(element, yOffset = 0, callback) {
     html2canvas(element, { scale }).then(canvas => {
       const imgData = canvas.toDataURL('image/png');
@@ -218,9 +257,11 @@ function downloadPDF() {
       callback(pdfHeight + padding * 2);
     });
   }
+
   const header = document.querySelector(".top-box");
   const dashboard = document.querySelector(".dashboard-container");
   const tables = document.querySelectorAll(".table-container");
+
   renderElementToPDF(header, 0, (headerHeight) => {
     renderElementToPDF(dashboard, headerHeight, () => {
       tables.forEach((t, i) => {
@@ -239,10 +280,12 @@ async function openAgentModal(agentName) {
   const activities = (await new PouchDB('crm_activities').allDocs({ include_docs: true })).rows.map(r => r.doc).filter(a => a.agent === agentName);
   const statusMap = {};
   leads.forEach(l => { const s = l["Lead Status"] || "New"; statusMap[s] = (statusMap[s] || 0) + 1; });
-  document.getElementById("modalLeadStats").innerHTML = Object.entries(statusMap).map(([s, c]) => `<li>${s}: ${c}</li>`).join("");
+  document.getElementById("modalLeadStats").innerHTML = Object.entries(statusMap).map(([s, c]) => `<li>${s}: ${c}</li>`).join("
+");
   const typeMap = {};
   activities.forEach(a => { const t = a.type || "Follow-up"; typeMap[t] = (typeMap[t] || 0) + 1; });
-  document.getElementById("modalInteractionStats").innerHTML = Object.entries(typeMap).map(([t, c]) => `<li>${t}: ${c}</li>`).join("");
+  document.getElementById("modalInteractionStats").innerHTML = Object.entries(typeMap).map(([t, c]) => `<li>${t}: ${c}</li>`).join("
+");
   const closed = leads.filter(l => l["Lead Status"] === "Closed");
   const avg = closed.length ? (closed.map(l => (new Date(l.updated_at) - new Date(l.created_at)) / 86400000).reduce((a, b) => a + b, 0) / closed.length).toFixed(1) : "N/A";
   document.getElementById("modalAvgConversion").textContent = closed.length ? avg + " days" : "No closed leads";
@@ -260,23 +303,17 @@ const observer = new MutationObserver(() => {
   });
   observer.disconnect();
 });
+
 observer.observe(document.getElementById("performanceTable"), { childList: true });
 
-loadDashboard();
-
-  </div>
-
-  <div id="calendar" class="tab-content">
-    <iframe src="calendar.html" style="width: 100%; height: 700px; border: none;"></iframe>
-  </div>
-
-  <div id="followups" class="tab-content">
-    <iframe src="followups.html" style="width: 100%; height: 700px; border: none;"></iframe>
-  </div>
+document.addEventListener("DOMContentLoaded", loadDashboard);
+// Full dashboard logic ends here
+</script>
 
   <script>
     const tabButtons = document.querySelectorAll(".tab-btn");
     const tabContents = document.querySelectorAll(".tab-content");
+
     tabButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         tabButtons.forEach(b => b.classList.remove("active"));
@@ -285,6 +322,7 @@ loadDashboard();
         document.getElementById(btn.dataset.tab).classList.add("active");
       });
     });
+
     function logout() {
       localStorage.removeItem("repName");
       localStorage.removeItem("role");
