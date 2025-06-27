@@ -1,4 +1,4 @@
-
+<!-- ✅ CLEANED & FIXED DASHBOARD HTML START -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,7 +44,22 @@
     <a href="calendar.html">📅 Calendar</a>
     <a href="settings.html">⚙️ Settings</a>
     <a href="#" onclick="logout()">Logout</a>
+  <div style="position: relative; margin-left: auto;">
+    <span id="notificationBell" style="cursor:pointer;">🔔</span>
+    <div id="notificationDropdown" style="display:none; position:absolute; right:0; top:30px; background:#1a1a1a; border:1px solid gold; color:white; padding:10px; border-radius:10px; width:300px; z-index:100;">
+      <div style="text-align:right; font-size:12px;">
+        <button onclick="markAllNotificationsRead()">Mark all as read</button>
+        <button onclick="deleteAllNotifications()">Delete all</button>
+      </div>
+      <ul id="notificationList" style="list-style:none; padding:0; margin-top:10px; max-height:250px; overflow-y:auto;"></ul>
+    </div>
   </div>
+</div>
+<div class="top-box">
+  <button onclick="showTab('dashboardTab')" style="margin-right: 10px;">📊 Dashboard</button>
+  <button onclick="showTab('calendarTab')" style="margin-right: 10px;">📅 Calendar</button>
+  <button onclick="showTab('followupsTab')">📝 Follow-ups</button>
+</div>
 
   <div class="top-box" id="lastSaleBox">Days since last sale: ...</div>
   <div class="filters">
@@ -54,7 +69,11 @@
     <button onclick="loadDashboard()">Apply</button>
     <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
   </div>
-  <div class="dashboard-container">
+  
+<div id="dashboardTab" class="tabContent" style="display: block;">
+  <!-- Original dashboard content remains here -->
+
+<div class="dashboard-container">
     <div class="chart-box"><canvas id="statusChart"></canvas></div>
     <div class="chart-box"><canvas id="conversionChart"></canvas></div>
     <div class="chart-box"><canvas id="agentPieChart"></canvas></div>
@@ -71,16 +90,6 @@
     <h3>Top Performing Agents</h3>
     <ol id="topAgentsList"></ol>
   </div>
-<div style="position: relative;">
-  <span id="notificationBell" style="cursor: pointer;">🔔</span>
-  <div id="notificationDropdown" style="display: none; position: absolute; right: 0; background: #1a1a1a; border: 1px solid gold; color: white; padding: 10px; border-radius: 10px; width: 300px; z-index: 100;">
-    <div style="text-align: right;">
-      <button onclick="markAllNotificationsRead()">Mark all as read</button>
-      <button onclick="deleteAllNotifications()">Delete all</button>
-    </div>
-    <ul id="notificationList" style="list-style: none; padding: 0; margin-top: 10px;"></ul>
-  </div>
-</div>
 
 <!-- ✅ Agent Drill-down Modal Inserted Below -->
 <!-- (Modal + Script already applied above in previous step and retained here) -->
@@ -116,6 +125,21 @@ async function loadDashboard() {
   populatePerformanceTable(filtered);
   populateAvgConversionTimeTable(filtered);
   populateTopAgents(filtered);
+
+  // 🔔 Trigger notifications on status
+  filtered.forEach(lead => {
+    if (lead["Lead Status"] === "Closed") {
+      addNotification(`Sale closed for ${lead.client_name || "Unnamed Lead"}`, lead.assigned_to);
+    }
+    if (lead["Lead Status"] === "Token Received") {
+      addNotification(`Token received for ${lead.client_name || "Unnamed Lead"}`, lead.assigned_to);
+    }
+    const dueDate = new Date(lead.due_date);
+    if (dueDate && dueDate < new Date()) {
+      addNotification(`Lead ${lead.client_name || "Unnamed Lead"} is overdue`, lead.assigned_to);
+    }
+  });
+
 }
 
 function updateLastSale(leads) {
@@ -273,9 +297,11 @@ const observer = new MutationObserver(() => {
   observer.disconnect();
 });
 observer.observe(document.getElementById("performanceTable"), { childList: true });
+
+
 const notifDB = new PouchDB('crm_notifications');
-const currentUser = localStorage.getItem('repName');
-const isAdmin = ['Atif Zubair', 'Atif Aziz'].includes(currentUser); // Adjust as needed
+const currentUser = localStorage.getItem("repName");
+const isAdmin = ["Atif Zubair", "Atif Aziz"].includes(currentUser);
 
 document.getElementById("notificationBell").addEventListener("click", () => {
   const dropdown = document.getElementById("notificationDropdown");
@@ -322,21 +348,25 @@ async function deleteAllNotifications() {
   await Promise.all(all.rows.map(row => notifDB.remove(row.doc)));
   loadNotifications();
 }
-loadDashboard();
-  // DEMO ONLY: Trigger sample notifications based on lead data
-filtered.forEach(lead => {
-  if (lead["Lead Status"] === "Closed") {
-    addNotification(`Sale closed for ${lead.client_name}`, lead.assigned_to);
-  }
-  if (lead["Lead Status"] === "Token Received") {
-    addNotification(`Token received for ${lead.client_name}`, lead.assigned_to);
-  }
-  const dueDate = new Date(lead.due_date);
-  if (dueDate && dueDate < new Date()) {
-    addNotification(`Lead ${lead.client_name} is overdue`, lead.assigned_to);
-  }
-});
 
+loadDashboard();
+</script>
+
+</div>
+<div id="calendarTab" class="tabContent" style="display: none;">
+  <iframe src="calendar.html" style="width: 100%; height: 800px; border: none;"></iframe>
+</div>
+<div id="followupsTab" class="tabContent" style="display: none;">
+  <iframe src="followup.html" style="width: 100%; height: 800px; border: none;"></iframe>
+</div>
+
+<script>
+function showTab(tabId) {
+  document.querySelectorAll('.tabContent').forEach(t => t.style.display = 'none');
+  document.getElementById(tabId).style.display = 'block';
+}
 </script>
 </body>
 </html>
+<!-- ✅ CLEANED & FIXED DASHBOARD HTML END -->
+
