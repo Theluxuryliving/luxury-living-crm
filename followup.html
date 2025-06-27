@@ -1,46 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRM - Follow-ups</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
-    .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
-    .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
-    .container { max-width: 1000px; margin: 30px auto; padding: 20px; background: #1a1a1a; border-radius: 10px; }
-    h2 { color: gold; text-align: center; }
-    .task { background: #333; border: 1px solid #666; padding: 10px; border-radius: 8px; margin: 10px 0; }
-    .task.done { background: #2e5f2e; border-color: #3fa53f; }
-    .btn { padding: 5px 10px; background: gold; color: black; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
-    input, textarea, select { width: 100%; padding: 8px; margin: 5px 0 10px; border-radius: 5px; border: 1px solid gold; background: #222; color: white; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    .followups-container {
+      max-width: 1000px;
+      margin: 30px auto;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid gold;
+    }
+    .followup-entry {
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #444;
+    }
+    .followup-entry h4 {
+      margin: 0;
+      color: gold;
+    }
+    .followup-entry small {
+      color: #ccc;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1a1a1a;
+      padding: 20px;
+      border: 2px solid gold;
+      border-radius: 10px;
+      z-index: 999;
+      width: 90%;
+      max-width: 500px;
+      color: white;
+    }
+    .modal input, .modal select, .modal textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      background: #111;
+      color: white;
+      border: 1px solid gold;
+      border-radius: 6px;
+    }
+    .modal button {
+      background: gold;
+      color: black;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn { margin: 10px; padding: 10px 15px; font-weight: bold; border-radius: 6px; background: gold; color: black; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
- <div class="navbar">
+  <div class="navbar">
     <a href="dashboard.html">Dashboard</a>
-    <a href="leads.html">Leads</a>
-    <a href="form.html">➕ Add New Client</a>
-    <a href="Projects_inventory.html">Inventory</a>
-    <a href="Deals.html">Deals</a>
-    <a href="Sales_Flow.html">Sales Flow</a>
-    <a href="Lead_status.html">Leads Status</a>
-    <a href="followup.html">followup</a>
     <a href="calendar.html">📅 Calendar</a>
-    <a href="settings.html">⚙️ Settings</a>
+    <a href="followups.html">📝 Follow-ups</a>
+    <a href="settings.html">⚙ Settings</a>
     <a href="#" onclick="logout()">Logout</a>
   </div>
-  <div id="calendar"></div>
 
-  <div class="container">
-    <h2>Follow-up Tasks</h2>
-    <div id="taskList"></div>
+  <div class="followups-container">
+    <button class="btn" onclick="openModal()">➕ Add Follow-up</button>
+    <div id="followupList"></div>
+  </div>
+
+  <!-- Modal Form -->
+  <div class="modal" id="followupModal">
+    <h3 id="modalTitle">Add/Edit Follow-up</h3>
+    <input type="hidden" id="followupId">
+    <label>Lead Name</label>
+    <input type="text" id="leadName">
+    <label>Type</label>
+    <select id="type">
+      <option>Call</option>
+      <option>Meeting</option>
+      <option>WhatsApp</option>
+      <option>Email</option>
+    </select>
+    <label>Date</label>
+    <input type="date" id="date">
+    <label>Follow-up Date</label>
+    <input type="date" id="followUpDate">
+    <label>Status</label>
+    <select id="status">
+      <option value="pending">Pending</option>
+      <option value="done">Done</option>
+    </select>
+    <label>Notes</label>
+    <textarea id="notes" rows="4"></textarea>
+    <button onclick="saveFollowup()">💾 Save</button>
+    <button onclick="deleteFollowup()" style="background:red; color:white;">🗑 Delete</button>
   </div>
 
   <script>
-    const db = new PouchDB('crm_activities');
-    const currentUser = localStorage.getItem("repName") || "Unknown";
+    const db = new PouchDB("crm_activities");
+    const user = localStorage.getItem("repName") || "Unknown";
     const role = localStorage.getItem("role") || "sales_rep";
 
     function logout() {
@@ -48,59 +136,65 @@
       window.location.href = 'index.html';
     }
 
-    async function loadTasks() {
-      const res = await db.allDocs({ include_docs: true });
-      const tasks = res.rows
-        .map(r => r.doc)
-        .filter(d => role === 'admin' || role === 'manager' || d.agent === currentUser)
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    function openModal(data = {}) {
+      document.getElementById("followupId").value = data._id || "";
+      document.getElementById("leadName").value = data.leadName || "";
+      document.getElementById("type").value = data.type || "Call";
+      document.getElementById("date").value = data.date || new Date().toISOString().substr(0, 10);
+      document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0, 10);
+      document.getElementById("status").value = data.status || "pending";
+      document.getElementById("notes").value = data.notes || "";
+      document.getElementById("followupModal").style.display = "block";
+    }
 
-      const container = document.getElementById("taskList");
-      container.innerHTML = tasks.map(task => `
-        <div class="task ${task.status === 'done' ? 'done' : ''}" id="${task._id}">
-          <strong>${task.type}</strong> - ${task.leadName} <br/>
-          📅 ${task.date} <br/>
-          📝 ${task.notes || ''}
-          <div style="margin-top:10px;">
-            <button class="btn" onclick="markDone('${task._id}')">✅ Done</button>
-            <button class="btn" onclick="editTask('${task._id}')">✏️ Edit</button>
-            <button class="btn" onclick="deleteTask('${task._id}')">🗑 Delete</button>
-          </div>
+    function closeModal() {
+      document.getElementById("followupModal").style.display = "none";
+    }
+
+    async function saveFollowup() {
+      const doc = {
+        _id: document.getElementById("followupId").value || new Date().toISOString(),
+        agent: user,
+        leadName: document.getElementById("leadName").value,
+        type: document.getElementById("type").value,
+        date: document.getElementById("date").value,
+        followUpDate: document.getElementById("followUpDate").value,
+        status: document.getElementById("status").value,
+        notes: document.getElementById("notes").value,
+      };
+      try {
+        const existing = await db.get(doc._id);
+        doc._rev = existing._rev;
+      } catch {}
+      await db.put(doc);
+      closeModal();
+      loadFollowups();
+    }
+
+    async function deleteFollowup() {
+      const id = document.getElementById("followupId").value;
+      if (!id) return;
+      const doc = await db.get(id);
+      await db.remove(doc);
+      closeModal();
+      loadFollowups();
+    }
+
+    async function loadFollowups() {
+      const result = await db.allDocs({ include_docs: true });
+      const followups = result.rows.map(r => r.doc).filter(f => role === 'admin' || role === 'manager' || f.agent === user);
+      const container = document.getElementById("followupList");
+      container.innerHTML = followups.map(f => `
+        <div class="followup-entry">
+          <h4>${f.leadName} (${f.type})</h4>
+          <small>📅 Date: ${f.date} | 📌 Follow-up: ${f.followUpDate} | ✅ Status: ${f.status}</small>
+          <p>${f.notes || "No notes"}</p>
+          <button class="btn" onclick='openModal(${JSON.stringify(f)})'>✏️ Edit</button>
         </div>
       `).join('');
     }
 
-    async function markDone(id) {
-      const doc = await db.get(id);
-      doc.status = 'done';
-      await db.put(doc);
-      loadTasks();
-    }
-
-    async function deleteTask(id) {
-      if (!confirm("Delete this task?")) return;
-      const doc = await db.get(id);
-      await db.remove(doc);
-      loadTasks();
-    }
-
-    async function editTask(id) {
-      const doc = await db.get(id);
-      const leadName = prompt("Lead Name:", doc.leadName);
-      const type = prompt("Type:", doc.type);
-      const date = prompt("Date:", doc.date);
-      const notes = prompt("Notes:", doc.notes);
-      if (leadName && type && date) {
-        doc.leadName = leadName;
-        doc.type = type;
-        doc.date = date;
-        doc.notes = notes;
-        await db.put(doc);
-        loadTasks();
-      }
-    }
-
-    loadTasks();
+    loadFollowups();
   </script>
 </body>
 </html>
