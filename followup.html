@@ -72,7 +72,8 @@
         if (showOverdueOnly && (!latest || latest.status !== 'pending' || latest.followUpDate >= today)) return '';
         if (selectedStatus && (!latest || latest.status !== selectedStatus)) return '';
         if (selectedDate && (!latest || latest.date !== selectedDate)) return '';
-        if ((role !== 'admin' && role !== 'manager') && lead.assigned_to !== user) return '';
+        // Agent filter temporarily bypassed for debug
+// if ((role !== 'admin' && role !== 'manager') && lead.assigned_to !== user) return '';
 
         const overdue = latest && latest.status === 'pending' && latest.followUpDate < today;
         const dueToday = latest && latest.status === 'pending' && latest.followUpDate === today;
