@@ -3,101 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Follow-ups</title>
+  <title>CRM Dashboard - Follow-ups</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
-    .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
-    .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
-    .container { max-width: 1000px; margin: 20px auto; padding: 20px; }
-    .filters { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .filters select, .filters input { padding: 8px; background: #1a1a1a; color: white; border: 1px solid gold; border-radius: 6px; }
-    .followup-card { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; }
-    .followup-card.overdue { border: 1px solid red; }
-    .followup-card.due-today { border: 1px solid gold; }
-    .followup-card h4 { margin: 0 0 10px; color: gold; }
-    .followup-card small { display: block; color: #bbb; }
+    .tab-header { display: flex; justify-content: center; gap: 20px; background: #111; padding: 15px; border-bottom: 1px solid gold; }
+    .tab-header button { background: #222; color: gold; border: 1px solid gold; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .tab-header button.active { background: gold; color: black; }
+    .tab-content { display: none; padding: 20px; }
+    .tab-content.active { display: block; }
+
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .filters select, .filters input { padding: 10px; background: #1a1a1a; color: white; border: 1px solid gold; border-radius: 5px; }
+
+    .followup-list { display: flex; flex-direction: column; gap: 10px; }
+    .followup-item { background: #1a1a1a; border: 1px solid gold; padding: 15px; border-radius: 8px; position: relative; }
+    .followup-item.overdue { border-left: 5px solid red; }
+    .followup-item.due-today { border-left: 5px solid orange; }
+
+    .edit-btn { position: absolute; top: 10px; right: 10px; background: gold; color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
-<div class="navbar">
- <a href="dashboard.html">Dashboard</a>
- <a href="leads.html">Leads</a>
- <a href="form.html">➕ Add New Client</a>
- <a href="Projects_inventory.html">Inventory</a>
- <a href="Deals.html">Deals</a>
- <a href="Sales_Flow.html">Sales Flow</a>
- <a href="Lead_status.html">Leads Status</a>
- <a href="calendar.html">📅 Calendar</a>
- <a href="followup.html">📝 Follow-ups</a>
- <a href="settings.html">⚙ Settings</a>
- <a href="#" onclick="logout()">Logout</a>
-</div>
-
-<div class="container">
-  <div class="filters">
-    <select id="statusFilter">
-      <option value="">All Statuses</option>
-      <option value="pending">Pending</option>
-      <option value="done">Done</option>
-    </select>
-    <input type="date" id="dateFilter" />
-    <select id="agentFilter"></select>
-    <button onclick="loadFollowups()">Apply</button>
+  <div class="tab-header">
+    <button class="active" onclick="switchTab('followupTab')">📝 Follow-ups</button>
+    <button onclick="location.href='calendar.html'">📅 Calendar</button>
   </div>
-  <div id="followupList"></div>
-</div>
 
-<script>
-  const db = new PouchDB('crm_activities');
-  const user = localStorage.getItem('repName') || 'Unknown';
-  const role = localStorage.getItem('role') || 'sales_rep';
+  <div id="followupTab" class="tab-content active">
+    <div class="filters">
+      <select id="filterStatus"><option value="">All Status</option><option value="pending">Pending</option><option value="done">Done</option></select>
+      <select id="filterAgent"><option value="">All Agents</option></select>
+      <input type="date" id="filterDate" />
+      <button onclick="loadFollowups()">Apply Filters</button>
+    </div>
 
-  function logout() {
-    localStorage.clear();
-    window.location.href = 'index.html';
-  }
+    <div class="followup-list" id="followupList"></div>
+  </div>
 
-  async function loadFollowups() {
-    const status = document.getElementById('statusFilter').value;
-    const date = document.getElementById('dateFilter').value;
-    const agent = document.getElementById('agentFilter').value;
-    const today = new Date().toISOString().substr(0,10);
+  <script>
+    const db = new PouchDB("crm_activities");
+    const user = localStorage.getItem("repName") || "Unknown";
+    const role = localStorage.getItem("role") || "sales_rep";
 
-    const result = await db.allDocs({ include_docs: true });
-    const docs = result.rows.map(r => r.doc).filter(doc => {
-      return (role === 'admin' || role === 'manager' || doc.agent === user) &&
-             (!status || doc.status === status) &&
-             (!date || doc.followUpDate === date) &&
-             (!agent || doc.agent === agent);
-    });
+    function switchTab(id) {
+      document.querySelectorAll(".tab-content").forEach(div => div.classList.remove("active"));
+      document.querySelectorAll(".tab-header button").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      event.target.classList.add("active");
+    }
 
-    const list = document.getElementById('followupList');
-    list.innerHTML = docs.map(doc => {
-      const isOverdue = doc.status === 'pending' && doc.followUpDate < today;
-      const isToday = doc.status === 'pending' && doc.followUpDate === today;
-      const cls = isOverdue ? 'overdue' : isToday ? 'due-today' : '';
-      return `
-        <div class="followup-card ${cls}">
-          <h4>${doc.type} with ${doc.leadName}</h4>
-          <small>Agent: ${doc.agent}</small>
-          <small>Date: ${doc.date}</small>
-          <small>Follow-up: ${doc.followUpDate}</small>
-          <small>Status: ${doc.status}</small>
-          <small>Notes: ${doc.notes}</small>
-        </div>
-      `;
-    }).join('');
-  }
+    async function loadFollowups() {
+      const status = document.getElementById("filterStatus").value;
+      const agent = document.getElementById("filterAgent").value;
+      const date = document.getElementById("filterDate").value;
+      const now = new Date().toISOString().split("T")[0];
 
-  async function populateAgentFilter() {
-    const result = await db.allDocs({ include_docs: true });
-    const agents = [...new Set(result.rows.map(r => r.doc.agent).filter(Boolean))];
-    const sel = document.getElementById('agentFilter');
-    sel.innerHTML = `<option value="">All Agents</option>` + agents.map(a => `<option>${a}</option>`).join('');
-  }
+      const result = await db.allDocs({ include_docs: true });
+      const docs = result.rows.map(r => r.doc).filter(doc => {
+        return (!status || doc.status === status) &&
+               (!agent || doc.agent === agent) &&
+               (!date || doc.date === date) &&
+               (role === 'admin' || role === 'manager' || doc.agent === user);
+      });
 
-  populateAgentFilter().then(loadFollowups);
-</script>
+      const agents = [...new Set(result.rows.map(r => r.doc.agent))];
+      const agentSel = document.getElementById("filterAgent");
+      agentSel.innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option value="${a}">${a}</option>`).join('');
+
+      const list = document.getElementById("followupList");
+      list.innerHTML = docs.map(doc => {
+        const overdue = doc.date < now && doc.status !== 'done';
+        const dueToday = doc.date === now && doc.status !== 'done';
+        const classList = ["followup-item"];
+        if (overdue) classList.push("overdue");
+        else if (dueToday) classList.push("due-today");
+        return `
+          <div class="${classList.join(' ')}">
+            <strong>${doc.leadName}</strong> | ${doc.type} | ${doc.date}<br>
+            Status: ${doc.status} | Follow-up: ${doc.followUpDate}<br>
+            Notes: ${doc.notes}<br>
+            <button class="edit-btn" onclick='editActivity(${JSON.stringify(doc)})'>✏️ Edit</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function editActivity(doc) {
+      localStorage.setItem("activityEdit", JSON.stringify(doc));
+      window.location.href = "calendar.html";
+    }
+
+    loadFollowups();
+  </script>
 </body>
 </html>
