@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CRM - Follow-ups</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
+    .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
+    .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
+    .container { max-width: 1000px; margin: 30px auto; padding: 20px; background: #1a1a1a; border-radius: 10px; }
+    h2 { color: gold; text-align: center; }
+    .task { background: #333; border: 1px solid #666; padding: 10px; border-radius: 8px; margin: 10px 0; }
+    .task.done { background: #2e5f2e; border-color: #3fa53f; }
+    .btn { padding: 5px 10px; background: gold; color: black; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+    input, textarea, select { width: 100%; padding: 8px; margin: 5px 0 10px; border-radius: 5px; border: 1px solid gold; background: #222; color: white; }
+  </style>
+</head>
+<body>
+ <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="followup.html">followup</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="settings.html">⚙️ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+  <div id="calendar"></div>
+
+  <div class="container">
+    <h2>Follow-up Tasks</h2>
+    <div id="taskList"></div>
+  </div>
+
+  <script>
+    const db = new PouchDB('crm_activities');
+    const currentUser = localStorage.getItem("repName") || "Unknown";
+    const role = localStorage.getItem("role") || "sales_rep";
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    async function loadTasks() {
+      const res = await db.allDocs({ include_docs: true });
+      const tasks = res.rows
+        .map(r => r.doc)
+        .filter(d => role === 'admin' || role === 'manager' || d.agent === currentUser)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const container = document.getElementById("taskList");
+      container.innerHTML = tasks.map(task => `
+        <div class="task ${task.status === 'done' ? 'done' : ''}" id="${task._id}">
+          <strong>${task.type}</strong> - ${task.leadName} <br/>
+          📅 ${task.date} <br/>
+          📝 ${task.notes || ''}
+          <div style="margin-top:10px;">
+            <button class="btn" onclick="markDone('${task._id}')">✅ Done</button>
+            <button class="btn" onclick="editTask('${task._id}')">✏️ Edit</button>
+            <button class="btn" onclick="deleteTask('${task._id}')">🗑 Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function markDone(id) {
+      const doc = await db.get(id);
+      doc.status = 'done';
+      await db.put(doc);
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      if (!confirm("Delete this task?")) return;
+      const doc = await db.get(id);
+      await db.remove(doc);
+      loadTasks();
+    }
+
+    async function editTask(id) {
+      const doc = await db.get(id);
+      const leadName = prompt("Lead Name:", doc.leadName);
+      const type = prompt("Type:", doc.type);
+      const date = prompt("Date:", doc.date);
+      const notes = prompt("Notes:", doc.notes);
+      if (leadName && type && date) {
+        doc.leadName = leadName;
+        doc.type = type;
+        doc.date = date;
+        doc.notes = notes;
+        await db.put(doc);
+        loadTasks();
+      }
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
