@@ -67,6 +67,7 @@
 
         const leadActivities = activities.filter(a => a.leadId === lead._id);
         const latest = leadActivities.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const noActivity = !latest;
 
         if (selectedAgent && lead.assigned_to !== selectedAgent) return '';
         if (showOverdueOnly && (!latest || latest.status !== 'pending' || latest.followUpDate >= today)) return '';
@@ -77,43 +78,12 @@
 
         const overdue = latest && latest.status === 'pending' && latest.followUpDate < today;
         const dueToday = latest && latest.status === 'pending' && latest.followUpDate === today;
+        const needsAttention = noActivity || overdue;
         let statusClass = '';
-if (!latest) {
-  statusClass = 'overdue';
-} else if (overdue) {
-  statusClass = 'overdue';
-} else if (dueToday) {
-  statusClass = 'due-today';
-}
-
-        if (overdue || dueToday) {
-  const status = overdue ? 'overdue' : 'due today';
-  const message = `${lead.Name} follow-up is ${status}`;
-
-  window.parent.postMessage({
-  type: "crm-notification",
-  source: "Follow-ups",
-  message: message,
-  agent: lead.assigned_to || user
-}, "*");
-
-if (window.top !== window && typeof window.top.addNotification === 'function') {
-  window.top.addNotification(message, lead.assigned_to || user);
-}
-
-if (typeof sendNotificationToDashboard === 'function') {
-  sendNotificationToDashboard("Follow-ups", message, lead.assigned_to || user);
-}
-}
-
-if (window.top !== window && typeof window.top.addNotification === 'function') {
-  window.top.addNotification(`Follow-up updated: ${field} set to ${value}`, user);
-}
-        }
-
-        return `
+        if (noActivity) statusClass = 'overdue';$1return `
           <div class="followup-item ${statusClass}">
             <strong>${lead.Name}</strong> (${lead.Phone})<br>
+            ${noActivity ? '<em style="color: orange">No follow-up activity yet</em><br>' : ''}
             Assigned to: ${lead.assigned_to || 'Unassigned'}<br>
             <div class="followup-detail">
               <select onchange="updateActivity('${lead._id}', 'type', this.value)">
