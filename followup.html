@@ -41,9 +41,12 @@
   <div class="followup-list">
     <h3>Follow-up Activities</h3>
     <div id="followupContainer"></div>
+    <div style="padding-top: 10px; font-weight: bold;">
+      Summary: Pending - <span id="pendingCount">0</span>, Done - <span id="doneCount">0</span>, Overdue - <span id="overdueCount">0</span>
+    </div>
+    <div id="agentOverdueSummary" style="margin-top: 15px; padding: 10px; background: #111; border-radius: 8px; color: gold; font-size: 14px;"></div>
   </div>
-
-  <script>
+<script>
     const db = new PouchDB("crm_activities");
     const leadsDb = new PouchDB("crm_leads");
     const calendarDB = new PouchDB("crm_calendar");
@@ -70,6 +73,15 @@
         const noActivity = !latest;
 
         if (selectedAgent && lead.assigned_to !== selectedAgent) return '';
+
+        const showOverdueOnly = document.getElementById("showOverdueOnly")?.checked;
+        if (showOverdueOnly) {
+          if (!latest || latest.status !== 'pending' || !latest.followUpDate || latest.followUpDate >= today) return '';
+        }
+
+        if (selectedStatus && (!latest || latest.status !== selectedStatus)) return '';
+
+        if (selectedDate && (!latest || latest.followUpDate !== selectedDate)) return '';
         if (showOverdueOnly && (!latest || latest.status !== 'pending' || latest.followUpDate >= today)) return '';
         if (selectedStatus && (!latest || latest.status !== selectedStatus)) return '';
         if (selectedDate && (!latest || latest.date !== selectedDate)) return '';
@@ -105,7 +117,8 @@
       }).join('');
 
       const agents = [...new Set(allLeads.map(l => l.assigned_to).filter(Boolean))];
-      document.getElementById("filterAgent").innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option>${a}</option>`).join('');
+      const agentFilter = document.getElementById("filterAgent");
+      agentFilter.innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option value="${a}">${a}</option>`).join('');
 
 // Add custom overdue-only checkbox
 if (!document.getElementById("showOverdueOnly")) {
@@ -140,6 +153,27 @@ if (!document.getElementById("showOverdueOnly")) {
 if (window.top !== window && typeof window.top.addNotification === 'function') {
   window.top.addNotification(`Follow-up updated: ${field} set to ${value}`, user);
 }
+
+      const agentStats = {};
+      allLeads.forEach(lead => {
+        const acts = activities.filter(a => a.leadId === lead._id);
+        const latest = acts.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const assigned = lead.assigned_to || 'Unassigned';
+        if (!agentStats[assigned]) agentStats[assigned] = { total: 0, overdue: 0 };
+        agentStats[assigned].total++;
+        const today = new Date().toISOString().split('T')[0];
+        if (!latest || (latest.status === 'pending' && latest.followUpDate < today)) agentStats[assigned].overdue++;
+      });
+
+      const summaryDiv = document.getElementById("agentOverdueSummary");
+      summaryDiv.innerHTML = Object.entries(agentStats).map(([agent, stat]) => {
+        const percent = stat.total ? ((stat.overdue / stat.total) * 100).toFixed(1) : '0';
+        if (percent >= 50) {
+          sendNotificationToDashboard("Follow-ups", `${agent} has ${percent}% overdue follow-ups`, agent);
+        }
+        const highlight = percent >= 50 ? ' style="color: red; font-weight: bold;"' : '';
+        return `<div${highlight}>${agent}: ${percent}% overdue (${stat.overdue}/${stat.total})</div>`;
+      }).join("<br>");
 
       loadFollowups();
 
