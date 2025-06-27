@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRM Calendar</title>
 
-  <!-- FullCalendar CSS & JS -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <!-- FullCalendar and dependencies -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
   <style>
     body {
@@ -39,8 +39,8 @@
       background: white;
       padding: 10px;
       border-radius: 10px;
+      min-height: 600px;
       color: black;
-      min-height: 600px; /* ✅ ensure calendar displays properly */
     }
 
     .modal {
@@ -57,7 +57,7 @@
       border-radius: 10px;
       width: 90%;
       max-width: 500px;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255,215,0,0.2);
     }
 
     .modal input, .modal textarea, .modal select {
@@ -94,6 +94,7 @@
   </style>
 </head>
 <body>
+
   <div class="navbar">
     <a href="dashboard.html">Dashboard</a>
     <a href="leads.html">Leads</a>
@@ -110,7 +111,7 @@
 
   <div id="calendar"></div>
 
-  <!-- Modal -->
+  <!-- Modal for Add/Edit Activity -->
   <div id="eventModal" class="modal">
     <div class="modal-header">
       <h3 id="modalTitle">Add/Edit Activity</h3>
@@ -174,8 +175,8 @@
       document.getElementById("activityId").value = data._id || "";
       document.getElementById("leadNameSelect").value = data.leadId || "";
       document.getElementById("type").value = data.type || "Call";
-      document.getElementById("date").value = data.date || new Date().toISOString().substr(0,10);
-      document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0,10);
+      document.getElementById("date").value = data.date || new Date().toISOString().substr(0, 10);
+      document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0, 10);
       document.getElementById("status").value = data.status || "pending";
       document.getElementById("notes").value = data.notes || "";
       document.getElementById("eventModal").style.display = "block";
@@ -226,7 +227,26 @@
       calendar.addEventSource(events);
     }
 
-    document.addEventListener("DOMContentLoaded", async function() {
+    document.addEventListener("DOMContentLoaded", async () => {
       await populateLeadDropdown();
 
       const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        dateClick: info => openModal({ date: info.dateStr, followUpDate: info.dateStr }),
+        eventClick: info => openModal(info.event.extendedProps),
+        events: []
+      });
+
+      calendar.render();
+      loadCalendarEvents();
+    });
+  </script>
+
+</body>
+</html>
