@@ -96,31 +96,31 @@
 <body>
 
  <div class="navbar">
-    <a href="dashboard.html">📊Dashboard</a>
-    <a href="leads.html">Leads</a>
+    <a href="dashboard.html">📊 Dashboard</a>
     <a href="form.html">➕ Add New Client</a>
-    <a href="Projects_inventory.html">Inventory</a>
-    <a href="Deals.html">Deals</a>
-    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="leads.html">Leads</a>
     <a href="Lead_status.html">Leads Status</a>
     <a href="calendar.html">📅 Calendar</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Deals.html">Deals</a>
     <a href="settings.html">⚙️ Settings</a>
     <a href="#" onclick="logout()">Logout</a>
-  <div style="position: relative; margin-left: auto;">
-    <span id="notificationBell" style="cursor:pointer;">🔔</span>
-    <div id="notificationDropdown" style="display:none; position:absolute; right:0; top:30px; background:#1a1a1a; border:1px solid gold; color:white; padding:10px; border-radius:10px; width:300px; z-index:100;">
-      <div style="text-align:right; font-size:12px;">
-        <button onclick="markAllNotificationsRead()">Mark all as read</button>
-        <button onclick="deleteAllNotifications()">Delete all</button>
+    <div style="position: relative; margin-left: auto;">
+      <span id="notificationBell" style="cursor:pointer;">🔔</span>
+      <div id="notificationDropdown" style="display:none; position:absolute; right:0; top:30px; background:#1a1a1a; border:1px solid gold; color:white; padding:10px; border-radius:10px; width:300px; z-index:100;">
+        <div style="text-align:right; font-size:12px;">
+          <button onclick="markAllNotificationsRead()">Mark all as read</button>
+          <button onclick="deleteAllNotifications()">Delete all</button>
+        </div>
+        <ul id="notificationList" style="list-style:none; padding:0; margin-top:10px; max-height:250px; overflow-y:auto;"></ul>
       </div>
-      <ul id="notificationList" style="list-style:none; padding:0; margin-top:10px; max-height:250px; overflow-y:auto;"></ul>
     </div>
   </div>
-</div>
-<div class="top-box">
-   <button onclick="showTab('followupsTab')">📝 Follow-ups</button>
-</div>
 
+  <div class="top-box" style="text-align: center; margin-top: 10px;">
+    <button onclick="window.location.href='followup.html'">📝 Follow-ups</button>
+  </div>
 
   <div id="calendar"></div>
 
@@ -259,16 +259,6 @@
       calendar.render();
       loadCalendarEvents();
     });
-  </div>
-<div id="followupsTab" class="tabContent" style="display: none;">
-  <iframe src="followup.html" style="width: 100%; height: 800px; border: none;"></iframe>
-</div>
-
-<script>
-function showTab(tabId) {
-  document.querySelectorAll('.tabContent').forEach(t => t.style.display = 'none');
-  document.getElementById(tabId).style.display = 'block';
-}
   </script>
 
 </body>
