@@ -6,13 +6,12 @@
   <title>CRM Calendar</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
     .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
     .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
-    #calendar { max-width: 1000px; margin: 20px auto; background: white; padding: 10px; border-radius: 10px; min-height: 600px; }
-    .fc-event-title { color: black !important; }
+    #calendar { max-width: 1000px; margin: 20px auto; background: white; color: black; padding: 10px; border-radius: 10px; }
 
     .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
              background: #1a1a1a; border: 2px solid gold; color: white; padding: 20px; z-index: 1000;
@@ -28,21 +27,22 @@
 </head>
 <body>
 <div class="navbar">
- <a href="dashboard.html">Dashboard</a>
- <a href="leads.html">Leads</a>
- <a href="form.html">➕ Add New Client</a>
- <a href="Projects_inventory.html">Inventory</a>
- <a href="Deals.html">Deals</a>
- <a href="Sales_Flow.html">Sales Flow</a>
- <a href="Lead_status.html">Leads Status</a>
- <a href="calendar.html">📅 Calendar</a>
- <a href="followup.html">📝 Follow-ups</a>
- <a href="settings.html">⚙ Settings</a>
- <a href="#" onclick="logout()">Logout</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="leads.html">Leads</a>
+  <a href="form.html">➕ Add New Client</a>
+  <a href="Projects_inventory.html">Inventory</a>
+  <a href="Deals.html">Deals</a>
+  <a href="Sales_Flow.html">Sales Flow</a>
+  <a href="Lead_status.html">Leads Status</a>
+  <a href="calendar.html">📅 Calendar</a>
+  <a href="followup.html">📝 Follow-ups</a>
+  <a href="settings.html">⚙ Settings</a>
+  <a href="#" onclick="logout()">Logout</a>
 </div>
+
 <div id="calendar"></div>
 
-<!-- Popup Modal -->
+<!-- Modal -->
 <div id="eventModal" class="modal">
   <div class="modal-header">
     <h3 id="modalTitle">Add/Edit Activity</h3>
@@ -77,8 +77,6 @@
   const db = new PouchDB("crm_activities");
   const user = localStorage.getItem("repName") || "Unknown";
   const role = localStorage.getItem("role") || "sales_rep";
-  const calendarEl = document.getElementById('calendar');
-  let calendar;
 
   function logout() {
     localStorage.clear();
@@ -93,8 +91,8 @@
     document.getElementById("activityId").value = data._id || "";
     document.getElementById("leadName").value = data.leadName || "";
     document.getElementById("type").value = data.type || "Call";
-    document.getElementById("date").value = data.date || new Date().toISOString().substr(0,10);
-    document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0,10);
+    document.getElementById("date").value = data.date || new Date().toISOString().substr(0, 10);
+    document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0, 10);
     document.getElementById("status").value = data.status || "pending";
     document.getElementById("notes").value = data.notes || "";
     document.getElementById("eventModal").style.display = "block";
@@ -129,6 +127,8 @@
     loadCalendarEvents();
   }
 
+  let calendar;
+
   async function loadCalendarEvents() {
     const result = await db.allDocs({ include_docs: true });
     const events = result.rows
@@ -144,8 +144,8 @@
     calendar.addEventSource(events);
   }
 
-  document.addEventListener("DOMContentLoaded", function() {
-    calendar = new FullCalendar.Calendar(calendarEl, {
+  document.addEventListener("DOMContentLoaded", function () {
+    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
       initialView: 'dayGridMonth',
       height: "auto",
       headerToolbar: {
@@ -153,10 +153,10 @@
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,listWeek'
       },
-      dateClick: function(info) {
+      dateClick: function (info) {
         openModal({ date: info.dateStr, followUpDate: info.dateStr });
       },
-      eventClick: function(info) {
+      eventClick: function (info) {
         openModal(info.event.extendedProps);
       },
       events: []
