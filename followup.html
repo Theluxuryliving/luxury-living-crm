@@ -63,23 +63,32 @@
 
       const container = document.getElementById("followupContainer");
       container.innerHTML = allLeads.map(lead => {
+        const showOverdueOnly = document.getElementById("showOverdueOnly")?.checked;
+
         const leadActivities = activities.filter(a => a.leadId === lead._id);
         const latest = leadActivities.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
         if (selectedAgent && lead.assigned_to !== selectedAgent) return '';
+        if (showOverdueOnly && (!latest || latest.status !== 'pending' || latest.followUpDate >= today)) return '';
         if (selectedStatus && (!latest || latest.status !== selectedStatus)) return '';
         if (selectedDate && (!latest || latest.date !== selectedDate)) return '';
         if ((role !== 'admin' && role !== 'manager') && lead.assigned_to !== user) return '';
 
         const overdue = latest && latest.status === 'pending' && latest.followUpDate < today;
         const dueToday = latest && latest.status === 'pending' && latest.followUpDate === today;
-        const statusClass = overdue ? 'overdue' : dueToday ? 'due-today' : '';
+        let statusClass = '';
+if (!latest) {
+  statusClass = 'overdue';
+} else if (overdue) {
+  statusClass = 'overdue';
+} else if (dueToday) {
+  statusClass = 'due-today';
+}
 
         if (overdue || dueToday) {
   const status = overdue ? 'overdue' : 'due today';
   const message = `${lead.Name} follow-up is ${status}`;
 
-  // Cross-tab dashboard notification
   window.parent.postMessage({
     type: "crm-notification",
     source: "Follow-ups",
@@ -87,18 +96,14 @@
     agent: lead.assigned_to || user
   }, "*");
 
-  // Direct dashboard bell notification
   if (window.top !== window && typeof window.top.addNotification === 'function') {
     window.top.addNotification(message, lead.assigned_to || user);
   }
 
-  // Optional convenience trigger function
   if (typeof sendNotificationToDashboard === 'function') {
     sendNotificationToDashboard("Follow-ups", message, lead.assigned_to || user);
   }
-} for a lead`,
-  agent: user
-}, "*");
+}
 
 if (window.top !== window && typeof window.top.addNotification === 'function') {
   window.top.addNotification(`Follow-up updated: ${field} set to ${value}`, user);
@@ -130,6 +135,13 @@ if (window.top !== window && typeof window.top.addNotification === 'function') {
 
       const agents = [...new Set(allLeads.map(l => l.assigned_to).filter(Boolean))];
       document.getElementById("filterAgent").innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option>${a}</option>`).join('');
+
+// Add custom overdue-only checkbox
+if (!document.getElementById("showOverdueOnly")) {
+  const overdueCheckbox = document.createElement("label");
+  overdueCheckbox.innerHTML = '<input type="checkbox" id="showOverdueOnly"> Overdue Only';
+  document.querySelector(".filter-row").appendChild(overdueCheckbox);
+}
     }
 
     async function updateActivity(leadId, field, value) {
