@@ -1,184 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRM Calendar</title>
+
+  <!-- FullCalendar CSS & JS -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
-    .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
-    .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
-    #calendar { max-width: 1000px; margin: 20px auto; background: white; padding: 10px; border-radius: 10px; }
 
-    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-             background: #1a1a1a; border: 2px solid gold; color: white; padding: 20px; z-index: 1000;
-             border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
-    .modal input, .modal textarea, .modal select { width: 100%; padding: 10px; margin: 8px 0;
-                                                   border: 1px solid gold; border-radius: 6px;
-                                                   background: #111; color: white; }
-    .modal button { margin-top: 10px; padding: 10px; background: gold; color: black; border: none;
-                    font-weight: bold; border-radius: 6px; cursor: pointer; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h3 { margin: 0; color: gold; }
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
+    }
+
+    .navbar a {
+      color: gold;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    #calendar {
+      max-width: 1000px;
+      margin: 20px auto;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      color: black;
+      min-height: 600px; /* ✅ ensure calendar displays properly */
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1a1a1a;
+      border: 2px solid gold;
+      color: white;
+      padding: 20px;
+      z-index: 1000;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    .modal input, .modal textarea, .modal select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid gold;
+      border-radius: 6px;
+      background: #111;
+      color: white;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      padding: 10px;
+      background: gold;
+      color: black;
+      border: none;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: gold;
+    }
   </style>
 </head>
 <body>
-<div class="navbar">
- <a href="dashboard.html">Dashboard</a>
- <a href="leads.html">Leads</a>
- <a href="form.html">➕ Add New Client</a>
- <a href="Projects_inventory.html">Inventory</a>
- <a href="Deals.html">Deals</a>
- <a href="Sales_Flow.html">Sales Flow</a>
- <a href="Lead_status.html">Leads Status</a>
- <a href="calendar.html">📅 Calendar</a>
- <a href="followup.html">📝 Follow-ups</a>
- <a href="settings.html">⚙ Settings</a>
- <a href="#" onclick="logout()">Logout</a>
-</div>
-<div id="calendar"></div>
-
-<!-- Popup Modal -->
-<div id="eventModal" class="modal">
-  <div class="modal-header">
-    <h3 id="modalTitle">Add/Edit Activity</h3>
-    <button onclick="closeModal()">✖</button>
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="followup.html">📝 Follow-ups</a>
+    <a href="settings.html">⚙ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
   </div>
-  <input type="hidden" id="activityId">
-  <label>Lead Name</label>
-  <select id="leadNameSelect"></select>
-  <label>Type</label>
-  <select id="type">
-    <option>Call</option>
-    <option>Meeting</option>
-    <option>WhatsApp</option>
-    <option>Email</option>
-  </select>
-  <label>Date</label>
-  <input type="date" id="date">
-  <label>Follow-up Date</label>
-  <input type="date" id="followUpDate">
-  <label>Status</label>
-  <select id="status">
-    <option value="pending">Pending</option>
-    <option value="done">Done</option>
-  </select>
-  <label>Notes</label>
-  <textarea id="notes"></textarea>
-  <button onclick="saveActivity()">💾 Save</button>
-  <button onclick="deleteActivity()" style="background:red; color:white;">🗑 Delete</button>
-</div>
 
-<script>
-  const db = new PouchDB("crm_activities");
-  const dbLeads = new PouchDB("crm_leads");
-  const user = localStorage.getItem("repName") || "Unknown";
-  const role = localStorage.getItem("role") || "sales_rep";
-  const calendarEl = document.getElementById('calendar');
-  let calendar;
+  <div id="calendar"></div>
 
-  function logout() {
-    localStorage.clear();
-    window.location.href = 'index.html';
-  }
+  <!-- Modal -->
+  <div id="eventModal" class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add/Edit Activity</h3>
+      <button onclick="closeModal()">✖</button>
+    </div>
+    <input type="hidden" id="activityId">
+    <label>Lead Name</label>
+    <select id="leadNameSelect"></select>
+    <label>Type</label>
+    <select id="type">
+      <option>Call</option>
+      <option>Meeting</option>
+      <option>WhatsApp</option>
+      <option>Email</option>
+    </select>
+    <label>Date</label>
+    <input type="date" id="date">
+    <label>Follow-up Date</label>
+    <input type="date" id="followUpDate">
+    <label>Status</label>
+    <select id="status">
+      <option value="pending">Pending</option>
+      <option value="done">Done</option>
+    </select>
+    <label>Notes</label>
+    <textarea id="notes"></textarea>
+    <button onclick="saveActivity()">💾 Save</button>
+    <button onclick="deleteActivity()" style="background:red; color:white;">🗑 Delete</button>
+  </div>
 
-  function closeModal() {
-    document.getElementById("eventModal").style.display = "none";
-  }
+  <script>
+    const db = new PouchDB("crm_activities");
+    const dbLeads = new PouchDB("crm_leads");
+    const user = localStorage.getItem("repName") || "Unknown";
+    const role = localStorage.getItem("role") || "sales_rep";
+    let calendar;
 
-  async function populateLeadDropdown() {
-    const select = document.getElementById("leadNameSelect");
-    select.innerHTML = '<option value="">Select Lead</option>';
-    const result = await dbLeads.allDocs({ include_docs: true });
-    result.rows.forEach(r => {
-      const lead = r.doc;
-      const option = document.createElement("option");
-      option.value = lead._id;
-      option.textContent = `${lead.Name} (${lead.Phone || lead.contact_number || 'N/A'})`;
-      select.appendChild(option);
-    });
-  }
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
 
-  function openModal(data = {}) {
-    document.getElementById("activityId").value = data._id || "";
-    document.getElementById("leadNameSelect").value = data.leadId || "";
-    document.getElementById("type").value = data.type || "Call";
-    document.getElementById("date").value = data.date || new Date().toISOString().substr(0,10);
-    document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0,10);
-    document.getElementById("status").value = data.status || "pending";
-    document.getElementById("notes").value = data.notes || "";
-    document.getElementById("eventModal").style.display = "block";
-  }
+    function closeModal() {
+      document.getElementById("eventModal").style.display = "none";
+    }
 
-  async function saveActivity() {
-    const doc = {
-      _id: document.getElementById("activityId").value || new Date().toISOString(),
-      agent: user,
-      leadId: document.getElementById("leadNameSelect").value,
-      leadName: document.getElementById("leadNameSelect").selectedOptions[0]?.textContent || "",
-      type: document.getElementById("type").value,
-      date: document.getElementById("date").value,
-      followUpDate: document.getElementById("followUpDate").value,
-      status: document.getElementById("status").value,
-      notes: document.getElementById("notes").value,
-    };
-    try {
-      const existing = await db.get(doc._id);
-      doc._rev = existing._rev;
-    } catch {}
-    await db.put(doc);
-    closeModal();
-    loadCalendarEvents();
-  }
+    async function populateLeadDropdown() {
+      const select = document.getElementById("leadNameSelect");
+      select.innerHTML = '<option value="">Select Lead</option>';
+      const result = await dbLeads.allDocs({ include_docs: true });
+      result.rows.forEach(r => {
+        const lead = r.doc;
+        const option = document.createElement("option");
+        option.value = lead._id;
+        option.textContent = `${lead.Name} (${lead.Phone || lead.contact_number || 'N/A'})`;
+        select.appendChild(option);
+      });
+    }
 
-  async function deleteActivity() {
-    const id = document.getElementById("activityId").value;
-    if (!id) return;
-    const doc = await db.get(id);
-    await db.remove(doc);
-    closeModal();
-    loadCalendarEvents();
-  }
+    function openModal(data = {}) {
+      document.getElementById("activityId").value = data._id || "";
+      document.getElementById("leadNameSelect").value = data.leadId || "";
+      document.getElementById("type").value = data.type || "Call";
+      document.getElementById("date").value = data.date || new Date().toISOString().substr(0,10);
+      document.getElementById("followUpDate").value = data.followUpDate || new Date().toISOString().substr(0,10);
+      document.getElementById("status").value = data.status || "pending";
+      document.getElementById("notes").value = data.notes || "";
+      document.getElementById("eventModal").style.display = "block";
+    }
 
-  async function loadCalendarEvents() {
-    const result = await db.allDocs({ include_docs: true });
-    const events = result.rows
-      .map(r => r.doc)
-      .filter(r => role === 'admin' || role === 'manager' || r.agent === user)
-      .map(a => ({
-        id: a._id,
-        title: `${a.type}: ${a.leadName}`,
-        start: a.date,
-        extendedProps: a
-      }));
-    calendar.removeAllEvents();
-    calendar.addEventSource(events);
-  }
+    async function saveActivity() {
+      const doc = {
+        _id: document.getElementById("activityId").value || new Date().toISOString(),
+        agent: user,
+        leadId: document.getElementById("leadNameSelect").value,
+        leadName: document.getElementById("leadNameSelect").selectedOptions[0]?.textContent || "",
+        type: document.getElementById("type").value,
+        date: document.getElementById("date").value,
+        followUpDate: document.getElementById("followUpDate").value,
+        status: document.getElementById("status").value,
+        notes: document.getElementById("notes").value,
+      };
+      try {
+        const existing = await db.get(doc._id);
+        doc._rev = existing._rev;
+      } catch {}
+      await db.put(doc);
+      closeModal();
+      loadCalendarEvents();
+    }
 
-  document.addEventListener("DOMContentLoaded", async function() {
-    await populateLeadDropdown();
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      height: "auto",
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,listWeek'
-      },
-      dateClick: function(info) {
-        openModal({ date: info.dateStr, followUpDate: info.dateStr });
-      },
-      eventClick: function(info) {
-        openModal(info.event.extendedProps);
-      },
-      events: []
-    });
-    calendar.render();
-    loadCalendarEvents();
-  });
-</script>
-</body>
-</html>
+    async function deleteActivity() {
+      const id = document.getElementById("activityId").value;
+      if (!id) return;
+      const doc = await db.get(id);
+      await db.remove(doc);
+      closeModal();
+      loadCalendarEvents();
+    }
+
+    async function loadCalendarEvents() {
+      const result = await db.allDocs({ include_docs: true });
+      const events = result.rows
+        .map(r => r.doc)
+        .filter(r => role === 'admin' || role === 'manager' || r.agent === user)
+        .map(a => ({
+          id: a._id,
+          title: `${a.type}: ${a.leadName}`,
+          start: a.date,
+          extendedProps: a
+        }));
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+    }
+
+    document.addEventListener("DOMContentLoaded", async function() {
+      await populateLeadDropdown();
+
+      const calendarEl = document.getElementById('calendar');
