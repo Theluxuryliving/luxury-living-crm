@@ -2,18 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CRM Dashboard</title>
-  
-  <!-- External Libraries -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <!-- Styles -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
     body { font-family: 'Poppins', sans-serif; background: #0d0d0d; color: #fff; margin: 0; padding: 0; }
     .navbar { background: #111; padding: 15px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid gold; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1); }
     .navbar a { color: gold; text-decoration: none; font-weight: 600; transition: color 0.2s; }
@@ -24,19 +20,6 @@
     .tab-btn.active { background: gold; color: black; font-weight: bold; }
     .tab-content { display: none; padding: 20px; }
     .tab-content.active { display: block; }
-    .filters { text-align: center; margin-bottom: 20px; }
-    .filters input, .filters select, .filters button { margin: 5px; padding: 8px; border-radius: 6px; border: none; }
-    .download-btn { background: gold; color: black; font-weight: bold; cursor: pointer; }
-    .dashboard-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
-    .chart-box { background: #1a1a1a; border: 1px solid gold; border-radius: 10px; padding: 20px; width: 400px; }
-    .table-container { margin: 20px auto; background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid gold; max-width: 1000px; }
-    table { width: 100%; border-collapse: collapse; color: white; }
-    th, td { padding: 10px; border: 1px solid gold; text-align: left; }
-    ol { padding-left: 20px; }
-    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid gold; color: white; padding: 20px; z-index: 1000; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .modal-header h3 { margin: 0; color: gold; }
-    .modal button { padding: 8px 12px; background: gold; color: black; border: none; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -62,7 +45,7 @@
   </div>
 
   <div id="dashboard" class="tab-content active">
-    <div class="filters">
+      <div class="filters">
       From: <input type="date" id="startDate" />
       To: <input type="date" id="endDate" />
       Agent: <select id="agentFilter"><option value="">All Agents</option></select>
@@ -307,13 +290,19 @@ const observer = new MutationObserver(() => {
 observer.observe(document.getElementById("performanceTable"), { childList: true });
 
 document.addEventListener("DOMContentLoaded", loadDashboard);
-// Full dashboard logic ends here
-</script>
+  </div>
+
+  <div id="calendar" class="tab-content">
+    <iframe src="calendar.html" style="width: 100%; height: 700px; border: none;"></iframe>
+  </div>
+
+  <div id="followups" class="tab-content">
+    <iframe src="followups.html" style="width: 100%; height: 700px; border: none;"></iframe>
+  </div>
 
   <script>
     const tabButtons = document.querySelectorAll(".tab-btn");
     const tabContents = document.querySelectorAll(".tab-content");
-
     tabButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         tabButtons.forEach(b => b.classList.remove("active"));
@@ -322,7 +311,6 @@ document.addEventListener("DOMContentLoaded", loadDashboard);
         document.getElementById(btn.dataset.tab).classList.add("active");
       });
     });
-
     function logout() {
       localStorage.removeItem("repName");
       localStorage.removeItem("role");
@@ -331,4 +319,3 @@ document.addEventListener("DOMContentLoaded", loadDashboard);
   </script>
 </body>
 </html>
-
