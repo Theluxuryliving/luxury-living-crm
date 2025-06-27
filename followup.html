@@ -10,45 +10,32 @@
     body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: white; margin: 0; padding: 0; }
     .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
     .navbar a { color: gold; text-decoration: none; margin: 0 15px; font-weight: bold; }
-    .filter-bar, .followup-form, .followup-list { max-width: 900px; margin: 20px auto; padding: 20px; background: #1a1a1a; border-radius: 10px; border: 1px solid gold; }
-    input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid gold; border-radius: 6px; background: #111; color: white; }
+    .filter-bar, .followup-list { max-width: 1200px; margin: 20px auto; padding: 20px; background: #1a1a1a; border-radius: 10px; border: 1px solid gold; }
+    .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    select, input[type="date"] { padding: 10px; border-radius: 6px; border: 1px solid gold; background: #111; color: white; min-width: 200px; }
     button { background: gold; color: black; font-weight: bold; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-    .followup-item { background: #222; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 5px solid gold; }
+    .followup-item { background: #222; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 5px solid gold; cursor: pointer; }
     .overdue { border-left-color: red; }
     .due-today { border-left-color: orange; }
+    .followup-detail { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+    .followup-detail textarea, .followup-detail input, .followup-detail select {
+      width: 100%; padding: 8px; border-radius: 4px; border: 1px solid gold; background: #111; color: white;
+    }
   </style>
 </head>
 <body>
   <div class="filter-bar">
     <h3>Filter Follow-ups</h3>
-    <select id="filterStatus">
-      <option value="">All Statuses</option>
-      <option value="pending">Pending</option>
-      <option value="done">Done</option>
-    </select>
-    <select id="filterAgent"></select>
-    <input type="date" id="filterDate" />
-    <button onclick="loadFollowups()">Apply</button>
-  </div>
-
-  <div class="followup-form">
-    <h3>Add/Edit Follow-up</h3>
-    <input type="hidden" id="followupId">
-    <select id="leadDropdown"></select>
-    <select id="type">
-      <option>Call</option>
-      <option>Meeting</option>
-      <option>WhatsApp</option>
-      <option>Email</option>
-    </select>
-    <input type="date" id="date">
-    <input type="date" id="followUpDate">
-    <select id="status">
-      <option value="pending">Pending</option>
-      <option value="done">Done</option>
-    </select>
-    <textarea id="notes" placeholder="Notes"></textarea>
-    <button onclick="saveFollowup()">💾 Save</button>
+    <div class="filter-row">
+      <select id="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="filterAgent"></select>
+      <input type="date" id="filterDate" />
+      <button onclick="loadFollowups()">Apply</button>
+    </div>
   </div>
 
   <div class="followup-list">
@@ -59,85 +46,132 @@
   <script>
     const db = new PouchDB("crm_activities");
     const leadsDb = new PouchDB("crm_leads");
+    const calendarDB = new PouchDB("crm_calendar");
     const user = localStorage.getItem("repName") || "Unknown";
     const role = localStorage.getItem("role") || "sales_rep";
 
-    async function logout() {
-      localStorage.clear();
-      window.location.href = "index.html";
-    }
-
-    async function loadLeads() {
-      const res = await leadsDb.allDocs({ include_docs: true });
-      const dropdown = document.getElementById("leadDropdown");
-      dropdown.innerHTML = res.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name} (${r.doc.Phone})</option>`).join('');
-    }
-
-    async function saveFollowup() {
-      const id = document.getElementById("followupId").value || new Date().toISOString();
-      const doc = {
-        _id: id,
-        agent: user,
-        leadId: document.getElementById("leadDropdown").value,
-        leadName: document.getElementById("leadDropdown").selectedOptions[0].textContent,
-        type: document.getElementById("type").value,
-        date: document.getElementById("date").value,
-        followUpDate: document.getElementById("followUpDate").value,
-        status: document.getElementById("status").value,
-        notes: document.getElementById("notes").value,
-      };
-      try {
-        const existing = await db.get(id);
-        doc._rev = existing._rev;
-      } catch {}
-      await db.put(doc);
-      loadFollowups();
-    }
-
     async function loadFollowups() {
-      const res = await db.allDocs({ include_docs: true });
+      const res = await leadsDb.allDocs({ include_docs: true });
+      const allLeads = res.rows.map(r => r.doc);
+      const activitiesRes = await db.allDocs({ include_docs: true });
+      const activities = activitiesRes.rows.map(r => r.doc);
+
       const selectedStatus = document.getElementById("filterStatus").value;
       const selectedAgent = document.getElementById("filterAgent").value;
       const selectedDate = document.getElementById("filterDate").value;
       const today = new Date().toISOString().split('T')[0];
 
-      const filtered = res.rows.map(r => r.doc).filter(doc => {
-        return (!selectedStatus || doc.status === selectedStatus) &&
-               (!selectedAgent || doc.agent === selectedAgent) &&
-               (!selectedDate || doc.date === selectedDate) &&
-               (role === 'admin' || role === 'manager' || doc.agent === user);
-      });
-
       const container = document.getElementById("followupContainer");
-      container.innerHTML = filtered.map(doc => {
-        let classes = "followup-item";
-        if (doc.followUpDate < today && doc.status === 'pending') classes += " overdue";
-        else if (doc.followUpDate === today && doc.status === 'pending') classes += " due-today";
-        return `<div class="${classes}" onclick="editFollowup('${doc._id}')">
-          <strong>${doc.leadName}</strong> (${doc.type})<br>
-          Date: ${doc.date} | Follow-up: ${doc.followUpDate}<br>
-          Status: ${doc.status} | Agent: ${doc.agent}<br>
-          ${doc.notes || ''}
-        </div>`;
+      container.innerHTML = allLeads.map(lead => {
+        const leadActivities = activities.filter(a => a.leadId === lead._id);
+        const latest = leadActivities.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+        if (selectedAgent && lead.assigned_to !== selectedAgent) return '';
+        if (selectedStatus && (!latest || latest.status !== selectedStatus)) return '';
+        if (selectedDate && (!latest || latest.date !== selectedDate)) return '';
+        if ((role !== 'admin' && role !== 'manager') && lead.assigned_to !== user) return '';
+
+        const overdue = latest && latest.status === 'pending' && latest.followUpDate < today;
+        const dueToday = latest && latest.status === 'pending' && latest.followUpDate === today;
+        const statusClass = overdue ? 'overdue' : dueToday ? 'due-today' : '';
+
+        if (overdue || dueToday) {
+  const status = overdue ? 'overdue' : 'due today';
+  const message = `${lead.Name} follow-up is ${status}`;
+
+  // Cross-tab dashboard notification
+  window.parent.postMessage({
+    type: "crm-notification",
+    source: "Follow-ups",
+    message,
+    agent: lead.assigned_to || user
+  }, "*");
+
+  // Direct dashboard bell notification
+  if (window.top !== window && typeof window.top.addNotification === 'function') {
+    window.top.addNotification(message, lead.assigned_to || user);
+  }
+
+  // Optional convenience trigger function
+  if (typeof sendNotificationToDashboard === 'function') {
+    sendNotificationToDashboard("Follow-ups", message, lead.assigned_to || user);
+  }
+} for a lead`,
+  agent: user
+}, "*");
+
+if (window.top !== window && typeof window.top.addNotification === 'function') {
+  window.top.addNotification(`Follow-up updated: ${field} set to ${value}`, user);
+}
+        }
+
+        return `
+          <div class="followup-item ${statusClass}">
+            <strong>${lead.Name}</strong> (${lead.Phone})<br>
+            Assigned to: ${lead.assigned_to || 'Unassigned'}<br>
+            <div class="followup-detail">
+              <select onchange="updateActivity('${lead._id}', 'type', this.value)">
+                <option value="Call">Call</option>
+                <option value="Meeting">Meeting</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Email">Email</option>
+              </select>
+              <input type="date" onchange="updateActivity('${lead._id}', 'date', this.value)" />
+              <input type="date" onchange="updateActivity('${lead._id}', 'followUpDate', this.value)" />
+              <select onchange="updateActivity('${lead._id}', 'status', this.value)">
+                <option value="pending">Pending</option>
+                <option value="done">Done</option>
+              </select>
+              <textarea placeholder="Conversation notes" onchange="updateActivity('${lead._id}', 'notes', this.value)"></textarea>
+            </div>
+          </div>
+        `;
       }).join('');
 
-      // populate filter dropdown
-      const agents = [...new Set(res.rows.map(r => r.doc.agent))];
+      const agents = [...new Set(allLeads.map(l => l.assigned_to).filter(Boolean))];
       document.getElementById("filterAgent").innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option>${a}</option>`).join('');
     }
 
-    async function editFollowup(id) {
-      const doc = await db.get(id);
-      document.getElementById("followupId").value = doc._id;
-      document.getElementById("leadDropdown").value = doc.leadId;
-      document.getElementById("type").value = doc.type;
-      document.getElementById("date").value = doc.date;
-      document.getElementById("followUpDate").value = doc.followUpDate;
-      document.getElementById("status").value = doc.status;
-      document.getElementById("notes").value = doc.notes;
+    async function updateActivity(leadId, field, value) {
+      const today = new Date().toISOString().split('T')[0];
+      const id = `${leadId}-${today}`;
+      let doc;
+      try { doc = await db.get(id); } catch { doc = { _id: id, leadId, agent: user }; }
+      doc[field] = value;
+      doc.date = doc.date || today;
+      await db.put(doc);
+
+      await calendarDB.put({
+        _id: `cal-${id}`,
+        title: `Follow-up: ${field} updated`,
+        start: today,
+        agent: user,
+        description: `${field} changed to ${value} for lead ${leadId}`
+      }).catch(err => {});
+
+      window.parent.postMessage({
+  type: "crm-notification",
+  source: "Follow-ups",
+  message: `Updated ${field} for a lead`,
+  agent: user
+}, "*");
+
+if (window.top !== window && typeof window.top.addNotification === 'function') {
+  window.top.addNotification(`Follow-up updated: ${field} set to ${value}`, user);
+}
+
+      loadFollowups();
+
+function sendNotificationToDashboard(source, message, agent) {
+  window.parent.postMessage({
+    type: "crm-notification",
+    source,  // e.g. "Leads", "Deals"
+    message, // e.g. "New lead: Asad"
+    agent    // e.g. "Talha Ali"
+  }, "*");
+}
     }
 
-    loadLeads();
     loadFollowups();
   </script>
 </body>
