@@ -5,54 +5,114 @@
   <title>CRM - Sales Flow</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <button onclick="exportToSheets()">Export</button>
-  <button onclick="importFromSheets()">Import</button>
-
-<script src="sheets.js"></script>
+  <script src="sheets.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .stage { display: inline-block; vertical-align: top; width: 18%; margin-right: 1%; background: #f2f2f2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-    .stage h3 { text-align: center; }
-    .lead-item { margin: 5px 0; background: white; padding: 5px; border-radius: 4px; border: 1px solid #ddd; }
-    .btn { padding: 8px 12px; font-weight: bold; background: #eee; display: inline-block; cursor: pointer; margin: 10px 5px; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #fff; margin: 0; padding: 0; }
+    .navbar { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid gold; }
+    .navbar a { color: gold; text-decoration: none; margin: 0 10px; font-weight: bold; }
+    .navbar a:hover { color: white; }
+    h1 { text-align: center; color: gold; margin: 20px 0; }
+    .kanban-container { display: flex; gap: 10px; overflow-x: auto; padding: 20px; }
+    .stage { flex: 1; min-width: 200px; background: #1a1a1a; border-radius: 10px; padding: 15px; border: 1px solid gold; box-shadow: 0 0 8px rgba(255, 215, 0, 0.1); }
+    .stage h3 { color: gold; text-align: center; margin-bottom: 10px; border-bottom: 1px solid gold; padding-bottom: 5px; }
+    .lead-item { background: #333; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #444; color: #fff; cursor: grab; }
+    .lead-item small { color: #ccc; font-size: 12px; display: block; }
+    .lead-item:hover { background: #444; }
+    .filters { text-align: center; margin: 10px; }
+    .filters select, .filters input { padding: 8px; border-radius: 5px; border: 1px solid gold; background: #1a1a1a; color: white; margin: 5px; }
+    .droppable { min-height: 50px; }
   </style>
 </head>
 <body>
+  <div class="navbar">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leads.html">Leads</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Deals.html">Deals</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="settings.html">⚙️ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
 
-<!-- CRM Navigation Bar -->
-<div style="background:#f0f0f0; padding:10px; margin-bottom:20px; border-bottom:1px solid #ccc;">
-  <strong>CRM Navigation:</strong>
-  <a href="leads.html" style="margin:0 10px;">Leads</a>
-  <a href="deals.html" style="margin:0 10px;">Deals & Payments</a>
-  <a href="projects_inventory.html" style="margin:0 10px;">Projects & Inventory</a>
-  <a href="sales_flow.html" style="margin:0 10px;">Sales Flow</a>
-  <a href="lead_status.html" style="margin:0 10px;">Lead Status</a>
-  <a href="dashboard.html" style="margin:0 10px;">Dashboard</a>
-  <a href="#" onclick="exportToSheets()">Export</a>
-  <a href="#" onclick="importFromSheets()">Import</a>
-</div>
+  <h1>Sales Flow Tracker</h1>
+  <div class="filters">
+    From: <input type="date" id="startDate" />
+    To: <input type="date" id="endDate" />
+    Agent: <select id="agentFilter"></select>
+    <button onclick="loadSalesFlow()">Apply</button>
+  </div>
+  <div class="kanban-container" id="flowContainer"></div>
 
-<h1>Sales Flow Tracker</h1>
-<div id="flowContainer" style="display:flex; gap:10px;"></div>
+  <script>
+    const dbLeads = new PouchDB('crm_leads');
 
-<script>
-  const dbLeads = new PouchDB('crm_leads');
+    function logout() {
+      localStorage.removeItem('repName');
+      window.location.href = 'index.html';
+    }
 
-  async function loadSalesFlow() {
-    const result = await dbLeads.allDocs({ include_docs: true });
-    const leads = result.rows.map(r => r.doc);
-    const stages = ["new", "contacted", "interested", "matured", "closed", "lost"];
+    async function loadSalesFlow() {
+      const result = await dbLeads.allDocs({ include_docs: true });
+      const leads = result.rows.map(r => r.doc);
 
-    const columns = stages.map(status => {
-      const items = leads.filter(l => l.status === status).map(l => `<div class='lead-item'>${l.name}<br/><small>${l.contact_number}</small></div>`).join('');
-      return `<div class='stage'><h3>${status.toUpperCase()}</h3>${items || '<i>No leads</i>'}</div>`;
-    }).join('');
+      const start = document.getElementById('startDate').valueAsDate;
+      const end = document.getElementById('endDate').valueAsDate;
+      const agent = document.getElementById('agentFilter').value;
 
-    document.getElementById('flowContainer').innerHTML = columns;
-  }
+      const stages = ["New", "Contacted", "Interested", "Matured", "Closed", "Lost"];
+      const grouped = {};
+      stages.forEach(s => grouped[s] = []);
 
-  loadSalesFlow();
-</script>
+      leads.forEach(lead => {
+        const status = (lead["Lead Status"] || "New").charAt(0).toUpperCase() + (lead["Lead Status"] || "New").slice(1).toLowerCase();
+        const date = new Date(lead.updated_at || lead.created_at);
+        const inRange = (!start || date >= start) && (!end || date <= end);
+        if ((!agent || lead.assigned_to === agent) && inRange && grouped[status]) grouped[status].push(lead);
+      });
 
+      const container = document.getElementById('flowContainer');
+      container.innerHTML = stages.map(stage => `
+        <div class='stage droppable' ondrop="onDrop(event, '${stage}')" ondragover="allowDrop(event)">
+          <h3>${stage} (${grouped[stage].length})</h3>
+          ${(grouped[stage] || []).map(lead => `
+            <div class='lead-item' draggable="true" ondragstart="onDragStart(event, '${lead._id}')">
+              <strong>${lead.Name || 'Unnamed'}</strong>
+              <small>${lead.Phone || 'N/A'}</small>
+              <small>${lead.City || '-'}</small>
+              <small>Rep: ${lead.assigned_to || '-'}</small>
+            </div>`).join('') || '<i>No leads</i>'}
+        </div>`).join('');
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function onDragStart(ev, id) {
+      ev.dataTransfer.setData("leadId", id);
+    }
+
+    async function onDrop(ev, newStage) {
+      ev.preventDefault();
+      const id = ev.dataTransfer.getData("leadId");
+      const lead = await dbLeads.get(id);
+      lead["Lead Status"] = newStage;
+      lead.updated_at = new Date().toISOString();
+      await dbLeads.put(lead);
+      loadSalesFlow();
+    }
+
+    async function populateAgentDropdown() {
+      const result = await dbLeads.allDocs({ include_docs: true });
+      const leads = result.rows.map(r => r.doc);
+      const agents = [...new Set(leads.map(l => l.assigned_to).filter(Boolean))];
+      const sel = document.getElementById('agentFilter');
+      sel.innerHTML = `<option value="">All Agents</option>` + agents.map(a => `<option value="${a}">${a}</option>`).join('');
+    }
+
+    populateAgentDropdown().then(loadSalesFlow);
+  </script>
 </body>
 </html>
