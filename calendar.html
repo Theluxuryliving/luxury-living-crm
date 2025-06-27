@@ -259,6 +259,14 @@
       calendar.render();
       loadCalendarEvents();
     });
+    function sendNotificationToDashboard(source, message, agent) {
+  window.parent.postMessage({
+    type: "crm-notification",
+    source,  // e.g. "Leads", "Deals"
+    message, // e.g. "New lead: Asad"
+    agent    // e.g. "Talha Ali"
+  }, "*");
+}
   </script>
 
 </body>
