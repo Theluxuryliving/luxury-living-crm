@@ -91,19 +91,19 @@ if (!latest) {
   const message = `${lead.Name} follow-up is ${status}`;
 
   window.parent.postMessage({
-    type: "crm-notification",
-    source: "Follow-ups",
-    message,
-    agent: lead.assigned_to || user
-  }, "*");
+  type: "crm-notification",
+  source: "Follow-ups",
+  message: message,
+  agent: lead.assigned_to || user
+}, "*");
 
-  if (window.top !== window && typeof window.top.addNotification === 'function') {
-    window.top.addNotification(message, lead.assigned_to || user);
-  }
+if (window.top !== window && typeof window.top.addNotification === 'function') {
+  window.top.addNotification(message, lead.assigned_to || user);
+}
 
-  if (typeof sendNotificationToDashboard === 'function') {
-    sendNotificationToDashboard("Follow-ups", message, lead.assigned_to || user);
-  }
+if (typeof sendNotificationToDashboard === 'function') {
+  sendNotificationToDashboard("Follow-ups", message, lead.assigned_to || user);
+}
 }
 
 if (window.top !== window && typeof window.top.addNotification === 'function') {
