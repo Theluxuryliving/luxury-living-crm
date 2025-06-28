@@ -83,8 +83,7 @@
 <body>
 
 <nav>
-      <strong>The Luxury Living</strong>
-  </div>
+  <div><strong>The Luxury Living</strong></div>
   <div class="nav-links">
     <a href="dashboard.html">📊 Dashboard</a>
     <a href="add_lead.html">➕ Add New Client</a>
@@ -100,6 +99,8 @@
 
 <div class="container">
   <h2>📁 Document Vault</h2>
+
+  <div id="loader" style="display:none; color:#FFD700; margin-bottom:10px;">⏳ Loading documents...</div>
 
   <form id="uploadForm" enctype="multipart/form-data">
     <label>Upload File:</label>
@@ -178,6 +179,7 @@
   });
 
   function loadDocuments() {
+    $('#loader').show();
     fetch('https://luxurylivingcrm.42web.io/get_documents.php')
       .then(res => res.json())
       .then(data => {
@@ -196,6 +198,11 @@
           ]);
         });
         table.draw();
+        $('#loader').hide();
+      })
+      .catch(() => {
+        alert("❌ Failed to load documents.");
+        $('#loader').hide();
       });
   }
 
