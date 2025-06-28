@@ -93,9 +93,14 @@
     <option value="Walk-in">Walk-in</option>
   </select>
 
-  <div class="kpi"><span>Total Leads</span><strong>0</strong></div>
-  <div class="kpi"><span>Matured Leads</span><strong>0</strong></div>
+  <div class="kpi" onclick="filterDrilldown('leads')"><span>Total Leads</span><strong>0</strong></div>
+  <div class="kpi" onclick="filterDrilldown('matured')"><span>Matured Leads</span><strong>0</strong></div>
   <div class="kpi"><span>Conversion %</span><strong>0%</strong></div>
+
+  <div class="export-buttons">
+    <button onclick="exportLeadsToExcel()">Export to Excel</button>
+    <button onclick="exportLeadsToPDF()">Export to PDF</button>
+  </div>
 
   <table id="leadsTable" class="display" width="100%">
     <thead>
@@ -113,125 +118,40 @@
   <canvas id="leadsChart" height="150"></canvas>
 </div>
 
-<hr />
-
-<div class="tab" id="revenue">
-  <h3>Revenue Report</h3>
-  <input type="text" id="revenue-date" placeholder="YYYY-MM-DD to YYYY-MM-DD">
-  <select id="revenue-agent">
-    <option value="">All Agents</option>
-    <option value="Talha Ali">Talha Ali</option>
-    <option value="Talal Younas">Talal Younas</option>
-  </select>
-  <select id="revenue-project">
-    <option value="">All Projects</option>
-    <option value="Royal Residencia">Royal Residencia</option>
-    <option value="Etihad Town">Etihad Town</option>
-  </select>
-  <label><input type="checkbox" id="revenue-compare" /> Compare with previous period</label>
-
-  <div class="kpi"><span>Total Revenue</span><strong>Rs 0</strong></div>
-  <div class="kpi"><span>Previous Period</span><strong>Rs 0</strong></div>
-
-   <canvas id="revenueChart" height="150"></canvas>
-</div>
-
-<!-- JS Section -->
 <script>
-function loadLeadReport() {
-  const date = $('#leads-date').val();
-  const agents = $('#leads-agent').val() || [];
-  const project = $('#leads-project').val();
-  const source = $('#leads-source').val();
+function exportLeadsToExcel() {
+  const table = document.getElementById('leadsTable');
+  const wb = XLSX.utils.table_to_book(table);
+  XLSX.writeFile(wb, 'Leads_Report.xlsx');
+}
 
-  const url = `https://luxurylivingcrm.42web.io/get_lead_report_data.php?date=${date}&agents=${agents.join(',')}&project=${project}&source=${source}`;
-
-  fetch(url)
-    .then(res => res.json())
-    .then(res => {
-      const table = $('#leadsTable').DataTable();
-      table.clear();
-      const statusCounts = {};
-      res.data.forEach(row => {
-        table.row.add([row.name, row.lead_status, row.agent_name, row.project_name, row.lead_date, row.lead_source]);
-        statusCounts[row.lead_status] = (statusCounts[row.lead_status] || 0) + 1;
-      });
-      table.draw();
-      document.querySelector('#leads .kpi:nth-child(1) strong').textContent = res.total;
-      document.querySelector('#leads .kpi:nth-child(2) strong').textContent = res.matured;
-      document.querySelector('#leads .kpi:nth-child(3) strong').textContent = `${res.conversion}%`;
-      renderLeadChart(statusCounts);
+function exportLeadsToPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text('Leads Report', 14, 10);
+  const rows = [];
+  $('#leadsTable tbody tr').each(function () {
+    const row = [];
+    $(this).find('td').each(function () {
+      row.push($(this).text());
     });
-}
-
-function renderLeadChart(counts) {
-  const ctx = document.getElementById('leadsChart').getContext('2d');
-  if (window.leadsChart) window.leadsChart.destroy();
-  window.leadsChart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: Object.keys(counts),
-      datasets: [{
-        data: Object.values(counts),
-        backgroundColor: ['#36A2EB', '#4BC0C0', '#FF6384', '#FFCE56', '#9966FF']
-      }]
-    },
-    options: { responsive: true }
+    rows.push(row);
   });
+  doc.autoTable({ head: [['Name', 'Status', 'Agent', 'Project', 'Date', 'Source']], body: rows });
+  doc.save('Leads_Report.pdf');
 }
 
-function loadRevenueReport() {
-  const date = $('#revenue-date').val();
-  const agent = $('#revenue-agent').val();
-  const project = $('#revenue-project').val();
-  const compare = $('#revenue-compare').prop('checked') ? 1 : 0;
-
-  fetch(`https://luxurylivingcrm.42web.io/get_revenue_report_data.php?agent=${agent}&project=${project}&date=${date}&compare=${compare}`)
-    .then(res => res.json())
-    .then(res => {
-      document.querySelector('#revenue .kpi:nth-child(1) strong').textContent = 'Rs ' + res.revenue.toLocaleString();
-      document.querySelector('#revenue .kpi:nth-child(2) strong').textContent = 'Rs ' + res.prev_revenue.toLocaleString();
-      renderRevenueChart(res.revenue, res.prev_revenue);
-    });
+function filterDrilldown(type) {
+  const table = $('#leadsTable').DataTable();
+  if (type === 'matured') {
+    table.column(1).search('Closed-Won|SPA|Downpayment', true, false).draw();
+  } else {
+    table.search('').draw();
+  }
 }
-
-function renderRevenueChart(current, previous) {
-  const ctx = document.getElementById('revenueChart').getContext('2d');
-  if (window.revenueChart) window.revenueChart.destroy();
-  window.revenueChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Current Period', 'Previous Period'],
-      datasets: [{
-        label: 'Revenue',
-        data: [current, previous],
-        backgroundColor: ['#36A2EB', '#FFCE56']
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-}
-
-// Event listeners
-$('#leads-date, #leads-agent, #leads-project, #leads-source').on('change', loadLeadReport);
-$('#revenue-date, #revenue-agent, #revenue-project, #revenue-compare').on('change', loadRevenueReport);
-
-$(document).ready(() => {
-  $('#leadsTable').DataTable();
-  loadLeadReport();
-  loadRevenueReport();
-});
-
-// Role restriction check
-fetch('https://luxurylivingcrm.42web.io/get_user_role.php')
-  .then(res => res.json())
-  .then(data => {
-    if (!['admin', 'manager'].includes(data.role)) {
-      document.body.innerHTML = '<h2 style="color:red;text-align:center;margin-top:50px">Access Denied</h2>';
-    }
-  });
 </script>
-
 </body>
+</html>
+
 </html>
 
