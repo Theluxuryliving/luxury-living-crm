@@ -2,244 +2,270 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CRM - Projects & Inventory</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projects - Luxury Living CRM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
+    :root {
+      --black: #000000;
+      --gold: #FFD700;
+      --chalk: #fdfdfd;
+    }
     body {
       font-family: 'Poppins', sans-serif;
-      background: #0d0d0d;
-      color: #fff;
+      background: var(--chalk);
       margin: 0;
-      padding: 0;
     }
-    .navbar {
-      background: #111;
-      padding: 15px;
-      text-align: center;
-      border-bottom: 1px solid gold;
+    nav {
+      background-color: var(--black);
+      color: var(--gold);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .navbar a {
-      color: gold;
+    nav .nav-links a {
+      color: var(--gold);
       text-decoration: none;
-      margin: 0 15px;
-      font-weight: bold;
+      margin-left: 18px;
+      font-weight: 500;
+      font-size: 14px;
     }
     .container {
-      padding: 20px;
+      margin: 30px;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .form-card, .unit-card {
-      background: #1a1a1a;
-      border: 1px solid gold;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.05);
+    h2 {
+      color: var(--black);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 6px;
+      margin-bottom: 20px;
     }
-    h3 {
-      color: gold;
-      border-bottom: 1px solid gold;
-      padding-bottom: 5px;
+    label {
+      font-weight: 500;
+      display: block;
+      margin-top: 12px;
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0;
+      padding: 8px;
+      margin-top: 6px;
+      margin-bottom: 12px;
       border-radius: 6px;
-      border: 1px solid gold;
-      background: #1a1a1a;
-      color: white;
+      border: 1px solid #ccc;
     }
     button {
-      background: linear-gradient(to right, #ffd700, #ffcc00);
-      color: black;
+      background-color: var(--black);
+      color: var(--gold);
       border: none;
-      padding: 12px 20px;
+      padding: 10px 20px;
       border-radius: 6px;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
-      margin-top: 10px;
-      transition: transform 0.2s;
-    }
-    button:hover {
-      transform: scale(1.05);
-    }
-    .inventory-item {
-      background: #222;
-      padding: 15px;
-      margin: 10px 0;
-      border: 1px solid gold;
-      border-radius: 8px;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    .available { background: green; color: white; }
-    .booked { background: orange; color: black; }
-    .sold { background: red; color: white; }
-    .filters {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
-<div class="navbar">
-  <a href="dashboard.html">Dashboard</a>
-  <a href="leads.html">Leads</a>
-  <a href="deals.html">Deals</a>
-  <a href="projects_inventory.html">Inventory</a>
-  <a href="sales_flow.html">Sales Flow</a>
-  <a href="lead_status.html">Lead Status</a>
-   <a href="settings.html">⚙️ Settings</a>
-    <a href="#" onclick="logout()">Logout</a>
-</div>
+
+<nav>
+  <div><strong>The Luxury Living</strong></div>
+  <div class="nav-links">
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="sales.html">Sales Flow</a>
+    <a href="deals.html">Deals</a>
+    <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
+  </div>
+</nav>
+
 <div class="container">
-  <div class="form-card">
-    <h3>Add Project</h3>
-    <form id="projectForm">
-      <input type="text" name="name" placeholder="Project Name" required />
-      <input type="text" name="location" placeholder="Location" />
-      <textarea name="description" placeholder="Description"></textarea>
-      <select name="commission_type" required>
-        <option value="percent">Commission in %</option>
-        <option value="fixed">Commission in PKR</option>
-      </select>
-      <input type="number" name="commission" placeholder="Default Commission Value" required />
-      <textarea name="commission_notes" placeholder="Commission Rules (e.g. Ground: 475k, First: 450k)"></textarea>
-      <button type="submit">Add Project</button>
-    </form>
-  </div>
+  <h2>Add New Project</h2>
+  <form id="projectForm">
+    <label>Project Name</label>
+    <input type="text" name="project_name" required>
 
-  <div class="form-card">
-    <h3>Add Inventory Unit</h3>
-    <form id="unitForm">
-      <select name="project_id" id="projectSelect" required></select>
-      <input type="text" name="unit_number" placeholder="Unit Number" required />
-      <input type="text" name="unit_type" placeholder="Unit Type (e.g., Shop, Apartment)" required />
-      <input type="text" name="floor" placeholder="Floor (e.g., Ground, First)" />
-      <input type="text" name="size" placeholder="Size (e.g., 1500 sq ft)" />
-      <input type="number" name="price" placeholder="Unit Price (PKR)" required />
-      <button type="submit">Add Unit</button>
-    </form>
-  </div>
+    <label>Developer / Owner Name</label>
+    <input type="text" name="developer" required>
 
-  <div class="filters">
-    <select id="filterProject"><option value="">Filter by Project</option></select>
-    <select id="filterStatus">
-      <option value="">Filter by Status</option>
-      <option value="available">Available</option>
-      <option value="booked">Booked</option>
-      <option value="sold">Sold</option>
+    <label>Project Type</label>
+    <select id="projectType">
+      <option value="offplan">Offplan</option>
+      <option value="ready">Ready to Move</option>
+      <option value="sell">To Sell</option>
+      <option value="rent">To Rent</option>
     </select>
-    <input type="text" id="searchUnit" placeholder="Search by Unit #..." />
-    <button onclick="loadInventory()">Apply Filters</button>
-  </div>
 
-  <div class="unit-card">
-    <h3>Inventory Units</h3>
-    <div id="unitList"></div>
-  </div>
+    <div id="propertyTypeWrap">
+      <label>Property Type</label>
+      <select id="propertyType">
+        <option value="townhouses">Town Houses</option>
+        <option value="apartments">Apartments</option>
+        <option value="residential_plots">Residential Plots</option>
+        <option value="commercial_plaza">Commercial Plaza</option>
+        <option value="commercial_plots">Commercial Plots</option>
+        <option value="commercial_shops">Commercial Shops</option>
+        <option value="hotel_apartments">Hotel Apartments</option>
+      </select>
+    </div>
+
+    <div id="priceFields"></div>
+
+    <label>Asking Price</label>
+    <input type="number" id="askingPrice">
+
+    <label>Discount Type</label>
+    <select id="discountType">
+      <option value="none">None</option>
+      <option value="percent">Percentage</option>
+      <option value="fixed">Fixed (PKR)</option>
+    </select>
+
+    <label>Discount Value</label>
+    <input type="number" id="discountValue">
+    <p id="finalPriceDisplay">PKR 0</p>
+
+    <label>Payment Time (Months)</label>
+    <input type="number" id="paymentTime">
+
+    <label>Down Payment (%)</label>
+    <input type="number" id="downPercent">
+    <p id="downAmount"></p>
+
+    <label>Confirmation (%)</label>
+    <input type="number" id="confirmPercent">
+    <p id="confirmAmount"></p>
+
+    <label>Possession (%)</label>
+    <input type="number" id="possessionPercent">
+    <p id="possessionAmount"></p>
+
+    <label>Balloon Type</label>
+    <select id="balloonType">
+      <option value="quarterly">Quarterly</option>
+      <option value="biannual">Biannual</option>
+    </select>
+    <p id="balloonInfo"></p>
+    <p id="installmentInfo"></p>
+
+    <label>Commission Type</label>
+    <select>
+      <option value="percent">Percentage</option>
+      <option value="fixed">Fixed</option>
+    </select>
+
+    <label>Commission Value</label>
+    <input type="number">
+
+    <label>Commission Rules</label>
+    <textarea></textarea>
+
+    <label>Banking Details</label>
+    <textarea></textarea>
+
+    <button type="submit">Save Project</button>
+  </form>
 </div>
 
 <script>
-  const dbProjects = new PouchDB('crm_projects');
-  const dbUnits = new PouchDB('crm_inventory');
-  const isAdmin = localStorage.getItem('role') === 'admin';
+function calculatePlan() {
+  const unitPrice = parseFloat(document.getElementById('askingPrice')?.value || 0);
+  const discountType = document.getElementById('discountType')?.value || 'none';
+  const discountValue = parseFloat(document.getElementById('discountValue')?.value || 0);
+  let finalPrice = unitPrice;
 
-  document.getElementById('projectForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const doc = {};
-    formData.forEach((val, key) => doc[key] = val);
-    doc._id = new Date().toISOString();
-    doc.created_at = new Date().toISOString();
-    await dbProjects.put(doc);
-    e.target.reset();
-    loadProjects();
-    loadProjectOptions();
-  };
-
-  document.getElementById('unitForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const doc = {};
-    formData.forEach((val, key) => doc[key] = val);
-    doc._id = new Date().toISOString();
-    doc.status = 'available';
-    doc.updated_at = new Date().toISOString();
-    await dbUnits.put(doc);
-    e.target.reset();
-    loadInventory();
-  };
-
-  async function loadProjects() {
-    const res = await dbProjects.allDocs({ include_docs: true });
-    const list = res.rows.map(r => r.doc);
-    const select = document.getElementById('filterProject');
-    select.innerHTML = `<option value="">Filter by Project</option>` + list.map(p => `<option value="${p._id}">${p.name}</option>`).join('');
+  if (discountType === 'percent') {
+    finalPrice = unitPrice - (unitPrice * discountValue / 100);
+  } else if (discountType === 'fixed') {
+    finalPrice = unitPrice - discountValue;
   }
 
-  async function loadProjectOptions() {
-    const res = await dbProjects.allDocs({ include_docs: true });
-    const list = res.rows.map(r => r.doc);
-    const select = document.getElementById('projectSelect');
-    select.innerHTML = list.map(p => `<option value="${p._id}">${p.name}</option>`).join('');
+  if (document.getElementById('finalPriceDisplay'))
+    document.getElementById('finalPriceDisplay').textContent = `PKR ${finalPrice.toLocaleString()}`;
+
+  const pricePerUnit = parseFloat(document.getElementById('pricePerUnit')?.value || 0);
+  const unitSize = parseFloat(document.getElementById('unitSize')?.value || 0);
+  let total = pricePerUnit * unitSize;
+  if (discountType === 'percent') total -= (total * discountValue / 100);
+  if (discountType === 'fixed') total -= discountValue;
+  if (!isNaN(total) && document.getElementById('totalPlotPrice'))
+    document.getElementById('totalPlotPrice').textContent = `Total Price: PKR ${total.toLocaleString()}`;
+
+  const months = parseInt(document.getElementById('paymentTime')?.value || 0);
+  const down = parseFloat(document.getElementById('downPercent')?.value || 0);
+  const confirm = parseFloat(document.getElementById('confirmPercent')?.value || 0);
+  const possession = parseFloat(document.getElementById('possessionPercent')?.value || 0);
+
+  const downAmount = (down / 100) * finalPrice;
+  const confirmAmount = (confirm / 100) * finalPrice;
+  const possessionAmount = (possession / 100) * finalPrice;
+
+  const balloonType = document.getElementById('balloonType')?.value;
+  let balloonCount = balloonType === 'quarterly' ? Math.floor(months / 3) : Math.floor(months / 6);
+
+  const balloonTotal = finalPrice * 0.2;
+  const balloonPer = balloonCount > 0 ? balloonTotal / balloonCount : 0;
+
+  const remainingAmount = finalPrice - (downAmount + confirmAmount + possessionAmount + balloonTotal);
+  const monthlyInstallment = months > 0 ? remainingAmount / months : 0;
+
+  document.getElementById('downAmount').textContent = `PKR ${downAmount.toLocaleString()}`;
+  document.getElementById('confirmAmount').textContent = `PKR ${confirmAmount.toLocaleString()}`;
+  document.getElementById('possessionAmount').textContent = `PKR ${possessionAmount.toLocaleString()}`;
+  document.getElementById('balloonInfo').textContent = `${balloonCount} ${balloonType} payments of PKR ${balloonPer.toLocaleString()}`;
+  document.getElementById('installmentInfo').textContent = `${months} monthly installments of PKR ${monthlyInstallment.toLocaleString()}`;
+}
+
+function renderPriceInputs() {
+  const type = document.getElementById('propertyType')?.value;
+  const container = document.getElementById('priceFields');
+  if (!container) return;
+  container.innerHTML = '';
+  if (type === 'townhouses') {
+    container.innerHTML = `
+      <label>Price - Ground Floor</label><input type="number">
+      <label>Price - First Floor</label><input type="number">
+      <label>Price - Second Floor</label><input type="number">
+    `;
+  } else if (type === 'apartments') {
+    container.innerHTML = `
+      <label>Studio</label><input type="number">
+      <label>1 Bed</label><input type="number">
+      <label>2 Bed</label><input type="number">
+      <label>3 Bed</label><input type="number">
+      <label>4 Bed</label><input type="number">
+      <label>Penthouse</label><input type="number">
+    `;
+  } else {
+    container.innerHTML = `
+      <label>Price Per Sq Ft / Marla</label><input type="number" id="pricePerUnit">
+      <label>Plot/Unit Size</label><input type="number" id="unitSize">
+      <p id="totalPlotPrice">Total Price: PKR 0</p>
+    `;
   }
+  $('#pricePerUnit, #unitSize').on('input', calculatePlan);
+}
 
-  async function loadInventory() {
-    const res = await dbUnits.allDocs({ include_docs: true });
-    const list = res.rows.map(r => r.doc);
-    const unitList = document.getElementById('unitList');
-    const filterProject = document.getElementById('filterProject').value;
-    const filterStatus = document.getElementById('filterStatus').value;
-    const searchUnit = document.getElementById('searchUnit').value.toLowerCase();
+function handleProjectTypeChange() {
+  const type = $('#projectType').val();
+  const showProperty = type === 'offplan' || type === 'ready';
+  $('#propertyTypeWrap').toggle(showProperty);
+  $('#paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType').closest('label, p').toggle(showProperty);
+  renderPriceInputs();
+}
 
-    unitList.innerHTML = list.filter(unit => {
-      return (!filterProject || unit.project_id === filterProject) &&
-             (!filterStatus || unit.status === filterStatus) &&
-             (!searchUnit || unit.unit_number.toLowerCase().includes(searchUnit));
-    }).map(unit => `
-      <div class="inventory-item">
-        <strong>${unit.unit_number}</strong> - ${unit.unit_type} | Floor: ${unit.floor || '-'} | ${unit.size || ''}<br/>
-        Price: PKR ${unit.price} | Status: 
-        <select onchange="updateStatus('${unit._id}', this.value)">
-          <option value="available" ${unit.status === 'available' ? 'selected' : ''}>Available</option>
-          <option value="booked" ${unit.status === 'booked' ? 'selected' : ''}>Booked</option>
-          <option value="sold" ${unit.status === 'sold' ? 'selected' : ''}>Sold</option>
-        </select>
-        ${isAdmin ? `<button onclick="deleteUnit('${unit._id}')">Delete</button>` : ''}
-      </div>
-    `).join('');
-  }
-
-  async function updateStatus(id, status) {
-    const unit = await dbUnits.get(id);
-    unit.status = status;
-    unit.updated_at = new Date().toISOString();
-    await dbUnits.put(unit);
-    loadInventory();
-  }
-
-  async function deleteUnit(id) {
-    if (!confirm('Delete this unit?')) return;
-    const doc = await dbUnits.get(id);
-    await dbUnits.remove(doc);
-    loadInventory();
-  }
-
-  loadProjects();
-  loadProjectOptions();
-  loadInventory();
+$(document).ready(() => {
+  handleProjectTypeChange();
+  $('#projectType').on('change', handleProjectTypeChange);
+  $('#propertyType').on('change', renderPriceInputs);
+  $('#askingPrice, #discountType, #discountValue, #paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType')
+    .on('input change', calculatePlan);
+});
 </script>
-<script src="sheets.js"></script>
+
 </body>
 </html>
