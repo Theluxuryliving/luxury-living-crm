@@ -5,6 +5,7 @@
   <title>CRM - Deals & Payments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -65,29 +66,47 @@
     button:hover {
       transform: scale(1.05);
     }
+    .breakdown-box {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border: 1px dashed gold;
+    }
   </style>
 </head>
 <body>
   <div class="navbar">
-    <a href="dashboard.html">Dashboard</a>
-    <a href="leads.html">Leads</a>
-    <a href="deals.html">Deals</a>
-    <a href="projects_inventory.html">Inventory</a>
-    <a href="sales_flow.html">Sales Flow</a>
-    <a href="lead_status.html">Lead Status</a>
-   <a href="settings.html">⚙️ Settings</a>
-    <a href="#" onclick="logout()">Logout</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="leads.html">👥 Leads</a>
+    <a href="projects.html">🏗️ Projects</a>
+    <a href="inventory.html">📦 Inventory</a>
+    <a href="sales.html">🔁 Sales Flow</a>
+    <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
+    <a href="reports.html">📈 Reports</a>
   </div>
 
- <div class="container">
+  <div class="container">
     <div class="form-card">
       <h3>Create Deal</h3>
       <form id="dealForm">
         <label>Lead:</label>
         <select name="lead_id" id="leadSelect" required></select>
 
+        <label>Project:</label>
+        <select name="project_id" id="projectSelect" required></select>
+
         <label>Unit:</label>
         <select name="unit_id" id="unitSelect" required></select>
+
+        <label>Project Type:</label>
+        <input type="text" name="project_type" id="projectType" readonly />
+
+        <label>Property Type:</label>
+        <input type="text" name="property_type" id="propertyType" readonly />
+
+        <label>Payment Term (months):</label>
+        <input type="text" name="payment_term" id="paymentTerm" readonly />
 
         <label>Primary Agent:</label>
         <select name="primary_agent" id="primaryAgent" required></select>
@@ -102,10 +121,25 @@
         </select>
 
         <label>Sale Price:</label>
-        <input type="number" name="sale_price" required />
+        <input type="number" name="sale_price" id="salePrice" readonly />
+
+        <label>Discount:</label>
+        <input type="number" name="discount" id="discount" value="0" />
+
+        <label>Final Price:</label>
+        <input type="number" name="final_price" id="finalPrice" readonly />
+
+        <div class="breakdown-box" id="paymentBreakdown" style="display:none"></div>
 
         <label>Commission (Total):</label>
-        <input type="number" name="commission" required />
+        <input type="number" name="commission" id="commission" readonly />
+
+        <label>Status:</label>
+        <select name="status" required>
+          <option value="open">Open</option>
+          <option value="closed-won">Closed - Won</option>
+          <option value="closed-lost">Closed - Lost</option>
+        </select>
 
         <label>Notes:</label>
         <textarea name="notes"></textarea>
@@ -114,154 +148,114 @@
       </form>
     </div>
 
-    <div class="form-card">
-      <h3>Filter Deals</h3>
-      <div class="filter-row">
-        <select id="filterAgent"><option value="">All Agents</option></select>
-        <input type="month" id="filterMonth" />
-        <button onclick="loadDeals()">Apply</button>
-      </div>
-    </div>
-
     <div class="deal-card">
       <h3>All Deals</h3>
-      <div id="dealsContainer"></div>
-    </div>
-
-    <div class="deal-card">
-      <h3>Reports</h3>
-      <canvas id="agentCommissionChart" height="120"></canvas>
-      <canvas id="monthlyDealsChart" height="120"></canvas>
-      <canvas id="avgDealSizeChart" height="120"></canvas>
-      <canvas id="projectVolumeChart" height="120"></canvas>
+      <div id="dealsList"></div>
     </div>
   </div>
 
   <script>
     const dbDeals = new PouchDB('crm_deals');
+    const dbLeads = new PouchDB('crm_leads');
+    const dbInventory = new PouchDB('crm_inventory');
+    const dbProjects = new PouchDB('crm_projects');
     const dbUsers = new PouchDB('crm_users');
-    const dbUnits = new PouchDB('crm_inventory');
+    let projectMap = {};
 
     async function loadOptions() {
-      const userRes = await dbUsers.allDocs({ include_docs: true });
-      userRes.rows.forEach(({ doc }) => {
-        if (doc.role === 'sales_rep' || doc.role === 'manager') {
-          ['primaryAgent', 'secondaryAgent', 'filterAgent'].forEach(id => {
-            const opt = document.createElement('option');
-            opt.value = doc.name;
-            opt.textContent = doc.name;
-            document.getElementById(id).appendChild(opt.cloneNode(true));
-          });
-        }
+      const [leadRes, unitRes, userRes, projectRes] = await Promise.all([
+        dbLeads.allDocs({ include_docs: true }),
+        dbInventory.allDocs({ include_docs: true }),
+        dbUsers.allDocs({ include_docs: true }),
+        dbProjects.allDocs({ include_docs: true })
+      ]);
+
+      document.getElementById('leadSelect').innerHTML = leadRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`).join('');
+      document.getElementById('unitSelect').innerHTML = unitRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number} - ${r.doc.unit_type}</option>`).join('');
+      document.getElementById('projectSelect').innerHTML = projectRes.rows.map(r => {
+        projectMap[r.doc._id] = r.doc;
+        return `<option value="${r.doc._id}" data-type="${r.doc.project_type}" data-property="${r.doc.property_type}">${r.doc.name}</option>`;
+      }).join('');
+
+      const primaryAgent = document.getElementById('primaryAgent');
+      const secondaryAgent = document.getElementById('secondaryAgent');
+      userRes.rows.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.doc.name;
+        opt.textContent = r.doc.name;
+        primaryAgent.appendChild(opt.cloneNode(true));
+        secondaryAgent.appendChild(opt.cloneNode(true));
       });
     }
 
-    document.getElementById('dealForm').onsubmit = async e => {
+    document.getElementById('projectSelect').addEventListener('change', function () {
+      const selected = this.options[this.selectedIndex];
+      const id = selected.value;
+      const proj = projectMap[id] || {};
+
+      document.getElementById('projectType').value = proj.project_type || '';
+      document.getElementById('propertyType').value = proj.property_type || '';
+      document.getElementById('paymentTerm').value = proj.payment_term || '';
+      document.getElementById('salePrice').value = proj.price || 0;
+      document.getElementById('commission').value = proj.commission || 0;
+      calculateFinalPrice();
+
+      if (proj.project_type === 'Offplan' && proj.down_payment && proj.confirmation && proj.possession) {
+        const fp = parseFloat(document.getElementById('finalPrice').value) || 0;
+        const dp = (fp * proj.down_payment / 100).toFixed(0);
+        const conf = (fp * proj.confirmation / 100).toFixed(0);
+        const pos = (fp * proj.possession / 100).toFixed(0);
+        document.getElementById('paymentBreakdown').innerHTML = `
+          <b>Down Payment:</b> PKR ${dp}<br>
+          <b>Confirmation:</b> PKR ${conf}<br>
+          <b>Possession:</b> PKR ${pos}<br>
+          <i>(Balloon/Installments calculated later based on payment term)</i>`;
+        document.getElementById('paymentBreakdown').style.display = 'block';
+      } else {
+        document.getElementById('paymentBreakdown').style.display = 'none';
+      }
+    });
+
+    function calculateFinalPrice() {
+      const sale = parseFloat(document.getElementById('salePrice').value) || 0;
+      const discount = parseFloat(document.getElementById('discount').value) || 0;
+      const final = sale - discount;
+      document.getElementById('finalPrice').value = final >= 0 ? final : 0;
+      document.getElementById('projectSelect').dispatchEvent(new Event('change'));
+    }
+
+    document.getElementById('discount').addEventListener('input', calculateFinalPrice);
+
+    document.getElementById('dealForm').addEventListener('submit', async e => {
       e.preventDefault();
-      const data = new FormData(e.target);
+      const formData = new FormData(e.target);
       const doc = {};
-      data.forEach((val, key) => doc[key] = val);
+      formData.forEach((val, key) => doc[key] = val);
       doc._id = new Date().toISOString();
-      doc.created_at = new Date().toISOString();
       await dbDeals.put(doc);
       e.target.reset();
       loadDeals();
-    };
-
-    function calcCommissionBreakdown(doc) {
-      const isAffiliate = doc.is_affiliate === 'yes';
-      const commission = parseFloat(doc.commission || 0);
-      const retained = isAffiliate ? (commission > 100000 ? 100000 : commission * 0.01) : commission;
-      const companyShare = isAffiliate ? retained : commission;
-      const sellerCount = doc.secondary_agent ? 2 : 1;
-      const remaining = 4 - sellerCount;
-
-      return {
-        affiliate: isAffiliate ? commission - retained : 0,
-        office: (companyShare * 0.20).toFixed(0),
-        seller: (companyShare * 0.40 / sellerCount).toFixed(0),
-        others: (companyShare * 0.40 / remaining).toFixed(0)
-      };
-    }
+    });
 
     async function loadDeals() {
-      const agent = document.getElementById('filterAgent').value;
-      const month = document.getElementById('filterMonth').value;
-
       const res = await dbDeals.allDocs({ include_docs: true });
-      const container = document.getElementById('dealsContainer');
-      container.innerHTML = '';
-
-      let stats = { agents: {}, months: {}, projects: {}, deals: 0, total: 0 };
-
-      for (const { doc } of res.rows) {
-        const date = new Date(doc.created_at);
-        const dealMonth = date.toISOString().slice(0, 7);
-
-        if (agent && doc.primary_agent !== agent && doc.secondary_agent !== agent) continue;
-        if (month && dealMonth !== month) continue;
-
-        stats.deals++;
-        const com = parseFloat(doc.commission || 0);
-        stats.total += com;
-        [doc.primary_agent, doc.secondary_agent].forEach(a => {
-          if (a) stats.agents[a] = (stats.agents[a] || 0) + com / (doc.secondary_agent ? 2 : 1);
-        });
-        stats.months[dealMonth] = (stats.months[dealMonth] || 0) + 1;
-        stats.projects[doc.unit_id?.split('-')[0] || 'Unknown'] = (stats.projects[doc.unit_id?.split('-')[0] || 'Unknown'] || 0) + 1;
-
-        const breakdown = calcCommissionBreakdown(doc);
-        container.innerHTML += `
+      const list = document.getElementById('dealsList');
+      list.innerHTML = '';
+      res.rows.forEach(row => {
+        const d = row.doc;
+        list.innerHTML += `
           <div class="form-card">
-            <strong>${doc.primary_agent}${doc.secondary_agent ? ' & ' + doc.secondary_agent : ''}</strong> sold <b>${doc.unit_id}</b><br>
-            <b>Commission:</b> PKR ${doc.commission}<br>
-            ${doc.is_affiliate === 'yes' ? `<b>Affiliate Share:</b> PKR ${breakdown.affiliate}<br>` : ''}
-            <b>Office:</b> ${breakdown.office} | Seller: ${breakdown.seller} | Others: ${breakdown.others}
-            <div><i>${doc.notes || ''}</i></div>
+            <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
+            <b>Commission:</b> PKR ${d.commission} | <b>Project:</b> ${d.project_id} | Status: ${d.status || 'open'}<br>
+            <b>Final Price:</b> ${d.final_price || 'N/A'} | <b>Discount:</b> ${d.discount || '0'}<br>
+            <button onclick="alert('Invoice for ${d._id}')">🧾 View Invoice</button>
           </div>`;
-      }
-
-      drawCharts(stats);
-    }
-
-    function drawCharts(stats) {
-      const agentLabels = Object.keys(stats.agents);
-      const agentData = Object.values(stats.agents);
-
-      const monthLabels = Object.keys(stats.months);
-      const monthData = Object.values(stats.months);
-
-      const avgData = agentLabels.map(a => (stats.agents[a] / (stats.deals / agentLabels.length)).toFixed(0));
-
-      const projectLabels = Object.keys(stats.projects);
-      const projectData = Object.values(stats.projects);
-
-      new Chart(document.getElementById('agentCommissionChart'), {
-        type: 'bar',
-        data: { labels: agentLabels, datasets: [{ label: 'Commission PKR', data: agentData, backgroundColor: 'gold' }] },
-        options: { plugins: { title: { display: true, text: 'Agent-wise Commission' } } }
-      });
-
-      new Chart(document.getElementById('monthlyDealsChart'), {
-        type: 'bar',
-        data: { labels: monthLabels, datasets: [{ label: 'Deals', data: monthData, backgroundColor: 'orange' }] },
-        options: { plugins: { title: { display: true, text: 'Monthly Deal Volume' } } }
-      });
-
-      new Chart(document.getElementById('avgDealSizeChart'), {
-        type: 'bar',
-        data: { labels: agentLabels, datasets: [{ label: 'Avg Deal Size', data: avgData, backgroundColor: 'lime' }] },
-        options: { plugins: { title: { display: true, text: 'Average Deal Size by Agent' } } }
-      });
-
-      new Chart(document.getElementById('projectVolumeChart'), {
-        type: 'bar',
-        data: { labels: projectLabels, datasets: [{ label: 'Deal Count', data: projectData, backgroundColor: 'teal' }] },
-        options: { plugins: { title: { display: true, text: 'Deals per Project' } } }
       });
     }
 
-    loadOptions().then(loadDeals);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadOptions().then(loadDeals);
+    });
   </script>
 </body>
 </html>
