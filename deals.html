@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -80,7 +81,6 @@
     <a href="dashboard.html">📊 Dashboard</a>
     <a href="leads.html">👥 Leads</a>
     <a href="projects.html">🏗️ Projects</a>
-    <a href="inventory.html">📦 Inventory</a>
     <a href="sales.html">🔁 Sales Flow</a>
     <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
     <a href="reports.html">📈 Reports</a>
@@ -248,9 +248,35 @@
             <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
             <b>Commission:</b> PKR ${d.commission} | <b>Project:</b> ${d.project_id} | Status: ${d.status || 'open'}<br>
             <b>Final Price:</b> ${d.final_price || 'N/A'} | <b>Discount:</b> ${d.discount || '0'}<br>
-            <button onclick="alert('Invoice for ${d._id}')">🧾 View Invoice</button>
+            <button onclick="generateInvoice('${encodeURIComponent(JSON.stringify(d))}')">🧾 View Invoice</button>
           </div>`;
       });
+    }
+
+    async function generateInvoice(dealData) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const data = JSON.parse(decodeURIComponent(dealData));
+
+      doc.setFontSize(16);
+      doc.text("🧾 Deal Invoice", 20, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Deal ID: ${data._id}`, 20, 30);
+      doc.text(`Lead ID: ${data.lead_id || 'N/A'}`, 20, 40);
+      doc.text(`Project ID: ${data.project_id || 'N/A'}`, 20, 50);
+      doc.text(`Unit ID: ${data.unit_id || 'N/A'}`, 20, 60);
+      doc.text(`Agent: ${data.primary_agent}`, 20, 70);
+      if (data.secondary_agent) doc.text(`Co-Agent: ${data.secondary_agent}`, 20, 80);
+      doc.text(`Sale Price: PKR ${data.sale_price}`, 20, 90);
+      doc.text(`Discount: PKR ${data.discount || 0}`, 20, 100);
+      doc.text(`Final Price: PKR ${data.final_price}`, 20, 110);
+      doc.text(`Commission: PKR ${data.commission}`, 20, 120);
+      doc.text(`Affiliate: ${data.is_affiliate === 'yes' ? 'Yes' : 'No'}`, 20, 130);
+      doc.text(`Status: ${data.status}`, 20, 140);
+      if (data.notes) doc.text(`Notes: ${data.notes}`, 20, 150);
+
+      doc.save(`Invoice_${data._id}.pdf`);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
