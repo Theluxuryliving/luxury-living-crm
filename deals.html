@@ -233,6 +233,15 @@
       formData.forEach((val, key) => doc[key] = val);
       doc._id = new Date().toISOString();
       await dbDeals.put(doc);
+      try {
+  await fetch('https://luxurylivingcrm.42web.io/insert_deal.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(doc)
+  });
+} catch (err) {
+  console.error("Sync to MySQL failed", err);
+}
       e.target.reset();
       loadDeals();
     });
