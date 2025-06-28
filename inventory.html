@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory - Luxury Living CRM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <style>
+    :root {
+      --black: #000000;
+      --gold: #FFD700;
+      --chalk: #fdfdfd;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--chalk);
+      margin: 0;
+    }
+    nav {
+      background-color: var(--black);
+      color: var(--gold);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    nav .nav-links a {
+      color: var(--gold);
+      text-decoration: none;
+      margin-left: 18px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .container {
+      margin: 30px;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: var(--black);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: 500;
+      display: block;
+      margin-top: 12px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: var(--black);
+      color: var(--gold);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .unit-list {
+      margin-top: 30px;
+    }
+    .unit-item {
+      border: 1px solid var(--gold);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div><strong>The Luxury Living</strong></div>
+  <div class="nav-links">
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="leads.html">👥 Leads</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="projects.html">🏗️ Projects</a>
+    <a href="deals.html">🤝 Deals</a>
+    <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h2>Add Inventory Unit</h2>
+  <form id="unitForm">
+    <label>Select Project</label>
+    <select name="project_id" id="projectSelect" required></select>
+    <label>Unit Number</label>
+    <input type="text" name="unit_number" required />
+    <label>Unit Type</label>
+    <input type="text" name="unit_type" required />
+    <label>Floor</label>
+    <input type="text" name="floor" />
+    <label>Size</label>
+    <input type="text" name="size" />
+    <label>Price (PKR)</label>
+    <input type="number" name="price" required />
+    <button type="submit">Add Unit</button>
+  </form>
+
+  <div class="filters">
+    <select id="filterProject"><option value="">Filter by Project</option></select>
+    <select id="filterStatus">
+      <option value="">Filter by Status</option>
+      <option value="available">Available</option>
+      <option value="booked">Booked</option>
+      <option value="sold">Sold</option>
+    </select>
+    <input type="text" id="searchUnit" placeholder="Search by Unit #...">
+    <button onclick="loadInventory()">Apply Filters</button>
+  </div>
+
+  <div class="unit-list" id="unitList"></div>
+</div>
+
+<script>
+  const dbProjects = new PouchDB('crm_projects');
+  const dbUnits = new PouchDB('crm_inventory');
+
+  async function loadProjectOptions() {
+    const res = await dbProjects.allDocs({ include_docs: true });
+    const list = res.rows.map(r => r.doc);
+    const select = document.getElementById('projectSelect');
+    const filter = document.getElementById('filterProject');
+    select.innerHTML = '<option value="">Select Project</option>' + list.map(p => `<option value="${p._id}">${p.project_name}</option>`).join('');
+    filter.innerHTML = '<option value="">Filter by Project</option>' + list.map(p => `<option value="${p._id}">${p.project_name}</option>`).join('');
+  }
+
+  document.getElementById('unitForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const doc = {};
+    formData.forEach((val, key) => doc[key] = val);
+    doc._id = new Date().toISOString();
+    doc.status = 'available';
+    await dbUnits.put(doc);
+    this.reset();
+    loadInventory();
+  };
+
+  async function loadInventory() {
+    const res = await dbUnits.allDocs({ include_docs: true });
+    const list = res.rows.map(r => r.doc);
+    const filterProject = document.getElementById('filterProject').value;
+    const filterStatus = document.getElementById('filterStatus').value;
+    const searchUnit = document.getElementById('searchUnit').value.toLowerCase();
+    const unitList = document.getElementById('unitList');
+
+    unitList.innerHTML = list.filter(unit => {
+      return (!filterProject || unit.project_id === filterProject) &&
+             (!filterStatus || unit.status === filterStatus) &&
+             (!searchUnit || unit.unit_number.toLowerCase().includes(searchUnit));
+    }).map(unit => `
+      <div class="unit-item">
+        <strong>${unit.unit_number}</strong> | ${unit.unit_type} | Floor: ${unit.floor || '-'} | Size: ${unit.size || '-'}<br>
+        Price: PKR ${unit.price} | Status:
+        <select onchange="updateStatus('${unit._id}', this.value)">
+          <option value="available" ${unit.status === 'available' ? 'selected' : ''}>Available</option>
+          <option value="booked" ${unit.status === 'booked' ? 'selected' : ''}>Booked</option>
+          <option value="sold" ${unit.status === 'sold' ? 'selected' : ''}>Sold</option>
+        </select>
+        <button onclick="editUnit('${unit._id}')">✏️ Edit</button>
+        <button onclick="deleteUnit('${unit._id}')">🗑️ Delete</button>
+      </div>
+    `).join('');
+  }
+
+  async function updateStatus(id, status) {
+    const doc = await dbUnits.get(id);
+    doc.status = status;
+    await dbUnits.put(doc);
+    loadInventory();
+  }
+
+  async function deleteUnit(id) {
+    if (confirm('Delete this unit?')) {
+      const doc = await dbUnits.get(id);
+      await dbUnits.remove(doc);
+      loadInventory();
+    }
+  }
+
+  async function editUnit(id) {
+    const unit = await dbUnits.get(id);
+    const newPrice = prompt('Enter new price:', unit.price);
+    if (newPrice !== null) {
+      unit.price = parseFloat(newPrice);
+      await dbUnits.put(unit);
+      loadInventory();
+    }
+  }
+
+  loadProjectOptions();
+  loadInventory();
+</script>
+
+</body>
+</html>
