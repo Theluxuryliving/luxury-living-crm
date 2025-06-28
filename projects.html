@@ -6,6 +6,7 @@
   <title>Projects - Luxury Living CRM</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <style>
     :root {
       --black: #000000;
@@ -70,7 +71,6 @@
   </style>
 </head>
 <body>
-
 <nav>
   <div><strong>The Luxury Living</strong></div>
   <div class="nav-links">
@@ -81,10 +81,8 @@
     <a href="sales.html">🔁 Sales Flow</a>
     <a href="deals.html">🤝 Deals</a>
     <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
-
   </div>
 </nav>
-
 <div class="container">
   <h2>Add New Project</h2>
   <form id="projectForm">
@@ -172,7 +170,32 @@
     <button type="submit">Save Project</button>
   </form>
 </div>
+<script>
+  const dbProjects = new PouchDB('crm_projects');
 
+  document.getElementById('projectForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const doc = {};
+    formData.forEach((val, key) => doc[key] = val);
+    doc._id = new Date().toISOString();
+    doc.created_at = new Date().toISOString();
+
+    await dbProjects.put(doc);
+
+    try {
+      await fetch('https://luxurylivingcrm.42web.io/insert_project.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(doc)
+      });
+    } catch (err) {
+      console.warn("MySQL sync failed:", err);
+    }
+
+    alert("✅ Project saved successfully.");
+    this.reset();
+  });
 <script>
 function calculatePlan() {
   const unitPrice = parseFloat(document.getElementById('askingPrice')?.value || 0);
