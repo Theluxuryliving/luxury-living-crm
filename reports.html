@@ -8,73 +8,70 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css"/>
   <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      background: #f4f6f9;
-    }
-    nav {
-      background: #1b1f3b;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-    }
-    nav h1 {
-      flex: 1;
-      font-size: 20px;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-left: 20px;
-      font-weight: 500;
-    }
-    .tab {
-      margin: 20px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .kpi {
-      display: inline-block;
-      margin-right: 20px;
-      background: #eef2f7;
-      padding: 10px 15px;
-      border-radius: 8px;
-      min-width: 150px;
-      text-align: center;
-    }
-    .kpi span {
-      display: block;
-      font-size: 13px;
-      color: #555;
-    }
-    .kpi strong {
-      font-size: 22px;
-      color: #1b1f3b;
-    }
-    canvas { max-width: 600px; margin-top: 20px; }
-    select, input[type="text"] {
-      margin-right: 10px;
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
+    #notificationBell {
+  position: relative;
+}
+#notificationCounter {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 50%;
+  display: none;
+}
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    body { font-family: 'Poppins', sans-serif; background: #0d0d0d; color: #fff; margin: 0; padding: 0; }
+    .navbar { background: #111; padding: 15px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid gold; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1); }
+    .navbar a { color: gold; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+    .navbar a:hover { color: white; }
+    .top-box { background: #222; color: gold; padding: 15px; text-align: center; font-size: 18px; font-weight: 600; border-bottom: 1px solid gold; text-shadow: 0 0 2px gold; }
+    .dashboard-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+    .chart-box { background: #1a1a1a; border: 1px solid gold; border-radius: 15px; padding: 20px; width: 400px; box-shadow: 0 4px 12px rgba(255, 215, 0, 0.08); transition: transform 0.2s; }
+    .chart-box:hover { transform: scale(1.02); }
+    .filters { text-align: center; margin-top: 10px; }
+    .filters input, .filters select { margin: 5px; padding: 10px; border-radius: 6px; border: 1px solid gold; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; }
+    .download-btn { background: linear-gradient(to right, #ffd700, #ffcc00); color: black; border: none; padding: 12px 24px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 15px auto; display: block; box-shadow: 0 3px 10px rgba(255, 215, 0, 0.2); transition: transform 0.2s; }
+    .download-btn:hover { transform: scale(1.05); }
+    .table-container { width: 90%; margin: 20px auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid gold; box-shadow: 0 4px 10px rgba(255, 215, 0, 0.05); }
+    .table-container h3 { color: gold; margin-bottom: 15px; border-bottom: 1px solid gold; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; color: white; font-size: 15px; }
+    th, td { padding: 12px 10px; border: 1px solid gold; text-align: left; }
+    tr:nth-child(even) { background-color: #141414; }
+    ol { padding-left: 20px; }
+    ol li { margin: 5px 0; }
   </style>
 </head>
 <body>
-
-<nav>
-  <h1>Luxury Living CRM</h1>
-  <a href="dashboard.html">Dashboard</a>
-  <a href="leads.html">Leads</a>
-  <a href="projects.html">Projects</a>
-  <a href="calendar.html">Calendar</a>
-  <a href="reports.html">Reports</a>
-</nav>
+  <div class="navbar">
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="form.html">➕ Add New Client</a>
+    <a href="leads.html">Leads</a>
+    <a href="Lead_status.html">Leads Status</a>
+    <a href="calendar.html">📅 Calendar</a>
+    <a href="Projects_inventory.html">Inventory</a>
+    <a href="Sales_Flow.html">Sales Flow</a>
+    <a href="Deals.html">Deals</a>
+    <a href="settings.html">⚙️ Settings</a>
+    <a href="#" onclick="logout()">Logout</a>
+  <div style="position: relative; margin-left: auto;">
+    <span id="notificationBell" style="cursor: pointer;">🔔<span id="notificationCounter"></span></span>
+    <div id="notificationDropdown" style="display:none; position:absolute; right:0; top:30px; background:#1a1a1a; border:1px solid gold; color:white; padding:10px; border-radius:10px; width:300px; z-index:100;">
+      <div style="text-align:right; font-size:12px;">
+        <button onclick="markAllNotificationsRead()">Mark all as read</button>
+        <button onclick="deleteAllNotifications()">Delete all</button>
+      </div>
+      <ul id="notificationList" style="list-style:none; padding:0; margin-top:10px; max-height:250px; overflow-y:auto;"></ul>
+    </div>
+  </div>
+</div>
 
 <div class="tab" id="leads">
   <h3>Leads Report</h3>
