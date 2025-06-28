@@ -1,3 +1,4 @@
+<!-- Updated reports.html with export buttons, print layout, and corporate styling -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,72 +7,98 @@
   <title>CRM Reports</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css"/>
   <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
-    #notificationBell {
-  position: relative;
-}
-#notificationCounter {
-  position: absolute;
-  top: -8px;
-  right: -10px;
-  background: red;
-  color: white;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 50%;
-  display: none;
-}
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-    body { font-family: 'Poppins', sans-serif; background: #0d0d0d; color: #fff; margin: 0; padding: 0; }
-    .navbar { background: #111; padding: 15px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid gold; box-shadow: 0 2px 6px rgba(255, 215, 0, 0.1); }
-    .navbar a { color: gold; text-decoration: none; font-weight: 600; transition: color 0.2s; }
-    .navbar a:hover { color: white; }
-    .top-box { background: #222; color: gold; padding: 15px; text-align: center; font-size: 18px; font-weight: 600; border-bottom: 1px solid gold; text-shadow: 0 0 2px gold; }
-    .dashboard-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
-    .chart-box { background: #1a1a1a; border: 1px solid gold; border-radius: 15px; padding: 20px; width: 400px; box-shadow: 0 4px 12px rgba(255, 215, 0, 0.08); transition: transform 0.2s; }
-    .chart-box:hover { transform: scale(1.02); }
-    .filters { text-align: center; margin-top: 10px; }
-    .filters input, .filters select { margin: 5px; padding: 10px; border-radius: 6px; border: 1px solid gold; background: #1a1a1a; color: white; font-family: 'Poppins', sans-serif; }
-    .download-btn { background: linear-gradient(to right, #ffd700, #ffcc00); color: black; border: none; padding: 12px 24px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 15px auto; display: block; box-shadow: 0 3px 10px rgba(255, 215, 0, 0.2); transition: transform 0.2s; }
-    .download-btn:hover { transform: scale(1.05); }
-    .table-container { width: 90%; margin: 20px auto; background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid gold; box-shadow: 0 4px 10px rgba(255, 215, 0, 0.05); }
-    .table-container h3 { color: gold; margin-bottom: 15px; border-bottom: 1px solid gold; padding-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; color: white; font-size: 15px; }
-    th, td { padding: 12px 10px; border: 1px solid gold; text-align: left; }
-    tr:nth-child(even) { background-color: #141414; }
-    ol { padding-left: 20px; }
-    ol li { margin: 5px 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: #ffffff;
+      color: #000000;
+    }
+    nav {
+      background: #000000;
+      color: #FFD700;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    nav h1 {
+      flex: 1;
+      font-size: 20px;
+      color: #FFD700;
+    }
+    nav a {
+      color: #FFD700;
+      text-decoration: none;
+      margin-left: 20px;
+      font-weight: 500;
+    }
+    .tab {
+      margin: 20px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .kpi {
+      display: inline-block;
+      margin-right: 20px;
+      background: #FFF8DC;
+      padding: 10px 15px;
+      border-radius: 8px;
+      min-width: 150px;
+      text-align: center;
+      border: 1px solid #FFD700;
+    }
+    .kpi span {
+      display: block;
+      font-size: 13px;
+      color: #333;
+    }
+    .kpi strong {
+      font-size: 22px;
+      color: #000000;
+    }
+    canvas { max-width: 600px; margin-top: 20px; }
+    select, input[type="text"] {
+      margin-right: 10px;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .export-buttons {
+      margin-top: 15px;
+    }
+    .export-buttons button {
+      background: #FFD700;
+      border: none;
+      padding: 8px 15px;
+      margin-right: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <a href="dashboard.html">📊 Dashboard</a>
-    <a href="form.html">➕ Add New Client</a>
-    <a href="leads.html">Leads</a>
-    <a href="Lead_status.html">Leads Status</a>
-    <a href="calendar.html">📅 Calendar</a>
-    <a href="Projects_inventory.html">Inventory</a>
-    <a href="Sales_Flow.html">Sales Flow</a>
-    <a href="Deals.html">Deals</a>
-    <a href="settings.html">⚙️ Settings</a>
-    <a href="#" onclick="logout()">Logout</a>
-  <div style="position: relative; margin-left: auto;">
-    <span id="notificationBell" style="cursor: pointer;">🔔<span id="notificationCounter"></span></span>
-    <div id="notificationDropdown" style="display:none; position:absolute; right:0; top:30px; background:#1a1a1a; border:1px solid gold; color:white; padding:10px; border-radius:10px; width:300px; z-index:100;">
-      <div style="text-align:right; font-size:12px;">
-        <button onclick="markAllNotificationsRead()">Mark all as read</button>
-        <button onclick="deleteAllNotifications()">Delete all</button>
-      </div>
-      <ul id="notificationList" style="list-style:none; padding:0; margin-top:10px; max-height:250px; overflow-y:auto;"></ul>
-    </div>
-  </div>
-</div>
+
+<nav>
+  <h1>Luxury Living CRM</h1>
+  <a href="dashboard.html">📊 Dashboard</a>
+  <a href="add_client.html">➕ Add New Client</a>
+  <a href="leads.html">Leads</a>
+  <a href="lead_status.html">Leads Status</a>
+  <a href="calendar.html">📅 Calendar</a>
+  <a href="projects.html">Inventory</a>
+  <a href="sales_flow.html">Sales Flow</a>
+  <a href="deals.html">Deals</a>
+  <a href="reports.html">Reports</a>
+</nav>
 
 <div class="tab" id="leads">
   <h3>Leads Report</h3>
@@ -93,13 +120,13 @@
     <option value="Walk-in">Walk-in</option>
   </select>
 
-  <div class="kpi" onclick="filterDrilldown('leads')"><span>Total Leads</span><strong>0</strong></div>
-  <div class="kpi" onclick="filterDrilldown('matured')"><span>Matured Leads</span><strong>0</strong></div>
+  <div class="kpi"><span>Total Leads</span><strong>0</strong></div>
+  <div class="kpi"><span>Matured Leads</span><strong>0</strong></div>
   <div class="kpi"><span>Conversion %</span><strong>0%</strong></div>
 
   <div class="export-buttons">
-    <button onclick="exportLeadsToExcel()">Export to Excel</button>
-    <button onclick="exportLeadsToPDF()">Export to PDF</button>
+    <button onclick="exportToExcel('leadsTable')">Export to Excel</button>
+    <button onclick="exportToPDF('leadsTable', 'Leads Report')">Download PDF</button>
   </div>
 
   <table id="leadsTable" class="display" width="100%">
@@ -118,40 +145,133 @@
   <canvas id="leadsChart" height="150"></canvas>
 </div>
 
+<hr />
+
+<div class="tab" id="revenue">
+  <h3>Revenue Report</h3>
+  <input type="text" id="revenue-date" placeholder="YYYY-MM-DD to YYYY-MM-DD">
+  <select id="revenue-agent">
+    <option value="">All Agents</option>
+    <option value="Talha Ali">Talha Ali</option>
+    <option value="Talal Younas">Talal Younas</option>
+  </select>
+  <select id="revenue-project">
+    <option value="">All Projects</option>
+    <option value="Royal Residencia">Royal Residencia</option>
+    <option value="Etihad Town">Etihad Town</option>
+  </select>
+  <label><input type="checkbox" id="revenue-compare" /> Compare with previous period</label>
+
+  <div class="kpi"><span>Total Revenue</span><strong>Rs 0</strong></div>
+  <div class="kpi"><span>Previous Period</span><strong>Rs 0</strong></div>
+  <canvas id="revenueChart" height="150"></canvas>
+</div>
+
 <script>
-function exportLeadsToExcel() {
-  const table = document.getElementById('leadsTable');
-  const wb = XLSX.utils.table_to_book(table);
-  XLSX.writeFile(wb, 'Leads_Report.xlsx');
+function exportToExcel(tableID) {
+  const table = document.getElementById(tableID);
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+  XLSX.writeFile(wb, `${tableID}.xlsx`);
 }
 
-function exportLeadsToPDF() {
+function exportToPDF(tableID, title) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  doc.text('Leads Report', 14, 10);
-  const rows = [];
-  $('#leadsTable tbody tr').each(function () {
-    const row = [];
-    $(this).find('td').each(function () {
-      row.push($(this).text());
-    });
-    rows.push(row);
-  });
-  doc.autoTable({ head: [['Name', 'Status', 'Agent', 'Project', 'Date', 'Source']], body: rows });
-  doc.save('Leads_Report.pdf');
-}
-
-function filterDrilldown(type) {
-  const table = $('#leadsTable').DataTable();
-  if (type === 'matured') {
-    table.column(1).search('Closed-Won|SPA|Downpayment', true, false).draw();
-  } else {
-    table.search('').draw();
-  }
+  doc.text(title, 10, 10);
+  doc.autoTable({ html: `#${tableID}`, startY: 20 });
+  doc.save(`${tableID}.pdf`);
 }
 </script>
+
+<script>
+// Role check
+fetch('https://luxurylivingcrm.42web.io/get_user_role.php')
+  .then(res => res.json())
+  .then(data => {
+    if (!['admin', 'manager'].includes(data.role)) {
+      document.body.innerHTML = '<h2 style="color:red;text-align:center;margin-top:50px">Access Denied</h2>';
+    }
+  });
+</script>
+
+<script>
+// Lead loading logic
+function loadLeadReport() {
+  const date = $('#leads-date').val();
+  const agents = $('#leads-agent').val() || [];
+  const project = $('#leads-project').val();
+  const source = $('#leads-source').val();
+  const url = `https://luxurylivingcrm.42web.io/get_lead_report_data.php?date=${date}&agents=${agents.join(',')}&project=${project}&source=${source}`;
+  fetch(url).then(res => res.json()).then(res => {
+    const table = $('#leadsTable').DataTable();
+    table.clear();
+    const statusCounts = {};
+    res.data.forEach(row => {
+      table.row.add([row.name, row.lead_status, row.agent_name, row.project_name, row.lead_date, row.lead_source]);
+      statusCounts[row.lead_status] = (statusCounts[row.lead_status] || 0) + 1;
+    });
+    table.draw();
+    document.querySelector('#leads .kpi:nth-child(1) strong').textContent = res.total;
+    document.querySelector('#leads .kpi:nth-child(2) strong').textContent = res.matured;
+    document.querySelector('#leads .kpi:nth-child(3) strong').textContent = `${res.conversion}%`;
+    renderLeadChart(statusCounts);
+  });
+}
+function renderLeadChart(counts) {
+  const ctx = document.getElementById('leadsChart').getContext('2d');
+  if (window.leadsChart) window.leadsChart.destroy();
+  window.leadsChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#36A2EB', '#4BC0C0', '#FF6384', '#FFCE56', '#9966FF']
+      }]
+    },
+    options: { responsive: true }
+  });
+}
+
+function loadRevenueReport() {
+  const date = $('#revenue-date').val();
+  const agent = $('#revenue-agent').val();
+  const project = $('#revenue-project').val();
+  const compare = $('#revenue-compare').prop('checked') ? 1 : 0;
+  fetch(`https://luxurylivingcrm.42web.io/get_revenue_report_data.php?agent=${agent}&project=${project}&date=${date}&compare=${compare}`)
+    .then(res => res.json())
+    .then(res => {
+      document.querySelector('#revenue .kpi:nth-child(1) strong').textContent = 'Rs ' + res.revenue.toLocaleString();
+      document.querySelector('#revenue .kpi:nth-child(2) strong').textContent = 'Rs ' + res.prev_revenue.toLocaleString();
+      renderRevenueChart(res.revenue, res.prev_revenue);
+    });
+}
+function renderRevenueChart(current, previous) {
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  if (window.revenueChart) window.revenueChart.destroy();
+  window.revenueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Current Period', 'Previous Period'],
+      datasets: [{
+        label: 'Revenue',
+        data: [current, previous],
+        backgroundColor: ['#36A2EB', '#FFCE56']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+}
+
+$('#leads-date, #leads-agent, #leads-project, #leads-source').on('change', loadLeadReport);
+$('#revenue-date, #revenue-agent, #revenue-project, #revenue-compare').on('change', loadRevenueReport);
+
+$(document).ready(() => {
+  $('#leadsTable').DataTable();
+  loadLeadReport();
+  loadRevenueReport();
+});
+</script>
+
 </body>
 </html>
-
-</html>
-
