@@ -1,6 +1,4 @@
 [build]
+  publish = "."            # your static files (index.html, projects.html, etc.)
   functions = "netlify/functions"
-  publish = "."
-
-[dev]
-  functions = "netlify/functions"
+  command = ""             # <--- NO build command
