@@ -3,349 +3,358 @@
 <head>
   <meta charset="UTF-8" />
   <title>Projects - Luxury Living CRM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA3tKnizfz0X6hz7PYLZruFjzJslh6kYy8&libraries=places&callback=initMap" async defer></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: #fdfdfd;
       margin: 0;
-      padding: 0;
+      background: #f8f8f8;
     }
     nav {
-      background-color: black;
-      color: gold;
-      padding: 10px 20px;
+      background: #000;
+      color: #FFD700;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     nav .nav-links a {
-      color: gold;
-      margin-left: 18px;
+      color: #FFD700;
+      margin-left: 16px;
       text-decoration: none;
-      font-weight: 500;
+      font-weight: bold;
     }
     .container {
       padding: 30px;
-      max-width: 960px;
-      margin: auto;
       background: white;
+      margin: 20px;
       border-radius: 10px;
-      margin-top: 30px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
     h2 {
-      color: black;
-      border-bottom: 2px solid gold;
-      padding-bottom: 5px;
+      color: #000;
+      border-bottom: 2px solid #FFD700;
+      padding-bottom: 6px;
     }
     label {
-      font-weight: 500;
+      font-weight: bold;
       display: block;
-      margin-top: 15px;
+      margin-top: 14px;
     }
     input, select, textarea {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
+      margin-bottom: 12px;
       border-radius: 5px;
       border: 1px solid #ccc;
     }
     button {
       background-color: black;
       color: gold;
-      padding: 10px 20px;
-      margin-top: 20px;
       border: none;
+      padding: 10px 20px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 40px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-    }
-    th {
-      background-color: #f8f8f8;
-    }
     #map {
-      width: 100%;
       height: 300px;
       margin-top: 10px;
-      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
-
-<nav>
-  <div><strong>Luxury Living CRM</strong></div>
-  <div class="nav-links">
-    <a href="dashboard.html">📊 Dashboard</a>
-    <a href="leads.html">👥 Leads</a>
-    <a href="calendar.html">📅 Calendar</a>
-    <a href="inventory.html">📦 Inventory</a>
-    <a href="sales.html">🔁 Sales Flow</a>
-    <a href="deals.html">🤝 Deals</a>
-    <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
-  </div>
-</nav>
-
-<div class="container">
-  <h2>Add New Project</h2>
-  <form id="projectForm">
-    <label>Project Name</label>
-    <input type="text" name="project_name" required>
-
-    <label>Developer / Owner</label>
-    <input type="text" name="developer" required>
-
-    <label>Project Type</label>
-    <select name="projectType" id="projectType">
-      <option value="offplan">Offplan</option>
-      <option value="ready">Ready to Move</option>
-      <option value="sell">To Sell</option>
-      <option value="rent">To Rent</option>
-    </select>
-
-    <div id="propertyTypeWrap">
-      <label>Property Type</label>
-      <select name="propertyType" id="propertyType">
-        <option value="townhouses">Town Houses</option>
-        <option value="apartments">Apartments</option>
-        <option value="residential_plots">Residential Plots</option>
-        <option value="commercial_plaza">Commercial Plaza</option>
-        <option value="commercial_plots">Commercial Plots</option>
-        <option value="commercial_shops">Commercial Shops</option>
-        <option value="hotel_apartments">Hotel Apartments</option>
-      </select>
+  <nav>
+    <div><strong>The Luxury Living</strong></div>
+    <div class="nav-links">
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="leads.html">👥 Leads</a>
+      <a href="calendar.html">📅 Calendar</a>
+      <a href="inventory.html">📦 Inventory</a>
+      <a href="sales.html">🔁 Sales Flow</a>
+      <a href="deals.html">🤝 Deals</a>
+      <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
     </div>
+  </nav>
 
-    <div id="priceFields"></div>
+  <div class="container">
+    <h2>Add New Project</h2>
+    <form id="projectForm">
+      <label>Project Name</label>
+      <input name="project_name" required>
 
-    <label>Asking Price</label>
-    <input type="number" name="askingPrice" id="askingPrice">
+      <label>Developer / Owner</label>
+      <input name="developer" required>
 
-    <label>Discount Type</label>
-    <select name="discountType" id="discountType">
-      <option value="none">None</option>
-      <option value="percent">Percentage</option>
-      <option value="fixed">Fixed (PKR)</option>
-    </select>
+      <label>Project Type</label>
+      <select name="projectType" id="projectType">
+        <option value="offplan">Offplan</option>
+        <option value="ready">Ready to Move</option>
+        <option value="sell">To Sell</option>
+        <option value="rent">To Rent</option>
+      </select>
 
-    <label>Discount Value</label>
-    <input type="number" name="discountValue" id="discountValue">
-    <p id="finalPriceDisplay">PKR 0</p>
+      <div id="propertyTypeWrap">
+        <label>Property Type</label>
+        <select name="propertyType" id="propertyType">
+          <option value="townhouses">Townhouses</option>
+          <option value="apartments">Apartments</option>
+          <option value="residential_plots">Residential Plots</option>
+          <option value="commercial_plaza">Commercial Plaza</option>
+          <option value="commercial_plots">Commercial Plots</option>
+          <option value="commercial_shops">Commercial Shops</option>
+          <option value="hotel_apartments">Hotel Apartments</option>
+        </select>
+      </div>
 
-    <label>Payment Time (months)</label>
-    <input type="number" name="paymentTime" id="paymentTime">
+      <div id="priceFields"></div>
 
-    <label>Down Payment (%)</label>
-    <input type="number" name="downPercent" id="downPercent">
-    <p id="downAmount"></p>
+      <label>Asking Price</label>
+      <input type="number" name="askingPrice" id="askingPrice">
 
-    <label>Confirmation (%)</label>
-    <input type="number" name="confirmPercent" id="confirmPercent">
-    <p id="confirmAmount"></p>
+      <label>Discount Type</label>
+      <select name="discountType" id="discountType">
+        <option value="none">None</option>
+        <option value="percent">Percentage</option>
+        <option value="fixed">Fixed (PKR)</option>
+      </select>
 
-    <label>Possession (%)</label>
-    <input type="number" name="possessionPercent" id="possessionPercent">
-    <p id="possessionAmount"></p>
+      <label>Discount Value</label>
+      <input type="number" name="discountValue" id="discountValue">
+      <p id="finalPriceDisplay">PKR 0</p>
 
-    <label>Balloon Type</label>
-    <select name="balloonType" id="balloonType">
-      <option value="quarterly">Quarterly</option>
-      <option value="biannual">Biannual</option>
-    </select>
-    <p id="balloonInfo"></p>
-    <p id="installmentInfo"></p>
+      <label>Payment Time (Months)</label>
+      <input type="number" name="paymentTime" id="paymentTime">
 
-    <label>Commission Type</label>
-    <select name="commission_type">
-      <option value="percent">Percentage</option>
-      <option value="fixed">Fixed</option>
-    </select>
+      <label>Down Payment (%)</label>
+      <input type="number" name="downPercent" id="downPercent">
+      <p id="downAmount"></p>
 
-    <label>Commission Value</label>
-    <input type="number" name="commission_value">
+      <label>Confirmation (%)</label>
+      <input type="number" name="confirmPercent" id="confirmPercent">
+      <p id="confirmAmount"></p>
 
-    <label>Commission Rules</label>
-    <textarea name="commission_rules"></textarea>
+      <label>Possession (%)</label>
+      <input type="number" name="possessionPercent" id="possessionPercent">
+      <p id="possessionAmount"></p>
 
-    <label>Banking Details</label>
-    <textarea name="banking_details"></textarea>
+      <label>Balloon Type</label>
+      <select name="balloonType" id="balloonType">
+        <option value="quarterly">Quarterly</option>
+        <option value="biannual">Biannual</option>
+      </select>
+      <p id="balloonInfo"></p>
+      <p id="installmentInfo"></p>
 
-    <label>📍 Project Location</label>
-    <input type="text" id="mapSearchBox" placeholder="Type project address..." />
-    <input type="hidden" name="latitude" id="latitude" />
-    <input type="hidden" name="longitude" id="longitude" />
-    <div id="map"></div>
+      <label>Commission Type</label>
+      <select name="commission_type">
+        <option value="percent">Percentage</option>
+        <option value="fixed">Fixed (PKR)</option>
+      </select>
 
-    <button type="submit">Save Project</button>
-  </form>
+      <label>Commission Value</label>
+      <input type="number" name="commission">
 
-  <div id="projectsTable"></div>
-</div>
+      <label>Commission Rules</label>
+      <textarea name="commission_notes"></textarea>
 
-<script>
-// --- Map ---
-function initMap() {
-  const map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat: 31.5204, lng: 74.3587 },
-    zoom: 12,
-  });
+      <label>Banking Details</label>
+      <textarea name="banking"></textarea>
 
-  const input = document.getElementById("mapSearchBox");
-  const autocomplete = new google.maps.places.Autocomplete(input);
-  autocomplete.bindTo("bounds", map);
+      <label>📍 Project Location</label>
+      <input id="locationInput" placeholder="Type location">
+      <input type="hidden" name="latitude" id="latitude">
+      <input type="hidden" name="longitude" id="longitude">
+      <div id="map"></div>
 
-  const marker = new google.maps.Marker({ map, draggable: true });
+      <button type="submit">Save Project</button>
+    </form>
 
-  autocomplete.addListener("place_changed", () => {
-    const place = autocomplete.getPlace();
-    if (!place.geometry) return;
-    map.setCenter(place.geometry.location);
-    marker.setPosition(place.geometry.location);
-    document.getElementById("latitude").value = place.geometry.location.lat();
-    document.getElementById("longitude").value = place.geometry.location.lng();
-  });
+    <h2>📋 Saved Projects</h2>
+    <table border="1" width="100%" style="margin-top:20px; border-collapse: collapse;">
+      <thead>
+        <tr style="background:#f3f3f3;">
+          <th>#</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Property</th>
+          <th>Price</th>
+          <th>Discount</th>
+          <th>Term</th>
+          <th>Developer</th>
+        </tr>
+      </thead>
+      <tbody id="projectTableBody"></tbody>
+    </table>
+  </div>
 
-  marker.addListener("dragend", function () {
-    const pos = marker.getPosition();
-    document.getElementById("latitude").value = pos.lat();
-    document.getElementById("longitude").value = pos.lng();
-  });
-}
+  <script>
+    const dbProjects = new PouchDB("crm_projects");
 
-// --- Dynamic Fields ---
-function calculatePlan() {
-  const unitPrice = parseFloat($('#askingPrice').val()) || 0;
-  const discountType = $('#discountType').val();
-  const discountValue = parseFloat($('#discountValue').val()) || 0;
-  let finalPrice = unitPrice;
+    async function saveProjectToDB(data) {
+      data._id = new Date().toISOString();
+      data.created_at = new Date().toISOString();
+      await dbProjects.put(data);
 
-  if (discountType === 'percent') finalPrice -= unitPrice * discountValue / 100;
-  if (discountType === 'fixed') finalPrice -= discountValue;
-  $('#finalPriceDisplay').text(`PKR ${finalPrice.toLocaleString()}`);
+      try {
+        await fetch("/.netlify/functions/insert_project", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+      } catch (e) {
+        console.warn("MySQL sync failed", e.message);
+      }
+    }
 
-  const months = parseInt($('#paymentTime').val()) || 0;
-  const down = parseFloat($('#downPercent').val()) || 0;
-  const confirm = parseFloat($('#confirmPercent').val()) || 0;
-  const possession = parseFloat($('#possessionPercent').val()) || 0;
+    async function loadProjects() {
+      const res = await dbProjects.allDocs({ include_docs: true });
+      const tbody = document.getElementById("projectTableBody");
+      tbody.innerHTML = res.rows.map((r, i) => {
+        const p = r.doc;
+        return `<tr>
+          <td>${i + 1}</td>
+          <td>${p.project_name}</td>
+          <td>${p.projectType}</td>
+          <td>${p.propertyType}</td>
+          <td>${p.askingPrice}</td>
+          <td>${p.discountType} (${p.discountValue})</td>
+          <td>${p.paymentTime}</td>
+          <td>${p.developer}</td>
+        </tr>`;
+      }).join("");
+    }
 
-  const downAmt = finalPrice * down / 100;
-  const confirmAmt = finalPrice * confirm / 100;
-  const possessionAmt = finalPrice * possession / 100;
-  const balloonType = $('#balloonType').val();
-  const balloonCount = balloonType === 'quarterly' ? Math.floor(months / 3) : Math.floor(months / 6);
-  const balloonTotal = finalPrice * 0.2;
-  const balloonPer = balloonTotal / balloonCount;
-  const remaining = finalPrice - (downAmt + confirmAmt + possessionAmt + balloonTotal);
-  const monthly = months > 0 ? remaining / months : 0;
+    function calculatePlan() {
+      const unitPrice = parseFloat($('#askingPrice').val() || 0);
+      const discountType = $('#discountType').val();
+      const discountValue = parseFloat($('#discountValue').val() || 0);
+      let finalPrice = unitPrice;
 
-  $('#downAmount').text(`PKR ${downAmt.toLocaleString()}`);
-  $('#confirmAmount').text(`PKR ${confirmAmt.toLocaleString()}`);
-  $('#possessionAmount').text(`PKR ${possessionAmt.toLocaleString()}`);
-  $('#balloonInfo').text(`${balloonCount} ${balloonType} payments of PKR ${balloonPer.toLocaleString()}`);
-  $('#installmentInfo').text(`${months} monthly installments of PKR ${monthly.toLocaleString()}`);
-}
+      if (discountType === 'percent') finalPrice -= (unitPrice * discountValue / 100);
+      else if (discountType === 'fixed') finalPrice -= discountValue;
 
-function renderPriceInputs() {
-  const type = $('#propertyType').val();
-  const container = $('#priceFields');
-  container.html('');
-  if (type === 'townhouses') {
-    container.html(`
-      <label>Ground Floor Price</label><input type="number">
-      <label>First Floor Price</label><input type="number">
-      <label>Second Floor Price</label><input type="number">
-    `);
-  } else if (type === 'apartments') {
-    container.html(`
-      <label>Studio</label><input type="number">
-      <label>1 Bed</label><input type="number">
-      <label>2 Bed</label><input type="number">
-      <label>3 Bed</label><input type="number">
-      <label>4 Bed</label><input type="number">
-      <label>Penthouse</label><input type="number">
-    `);
-  } else {
-    container.html(`
-      <label>Price Per Sq Ft / Marla</label><input type="number" id="pricePerUnit">
-      <label>Plot/Unit Size</label><input type="number" id="unitSize">
-      <p id="totalPlotPrice">Total Price: PKR 0</p>
-    `);
-  }
-}
+      $('#finalPriceDisplay').text(`PKR ${finalPrice.toLocaleString()}`);
 
-function handleProjectTypeChange() {
-  const type = $('#projectType').val();
-  const show = (type === 'offplan' || type === 'ready');
-  $('#propertyTypeWrap').toggle(show);
-  $('#paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType')
-    .closest('label').add('p').toggle(show);
-  renderPriceInputs();
-}
+      const months = parseInt($('#paymentTime').val() || 0);
+      const down = parseFloat($('#downPercent').val() || 0);
+      const confirm = parseFloat($('#confirmPercent').val() || 0);
+      const possession = parseFloat($('#possessionPercent').val() || 0);
+      const balloonType = $('#balloonType').val();
 
-// --- Submit Form ---
-$('#projectForm').on('submit', async function (e) {
-  e.preventDefault();
-  const formData = Object.fromEntries(new FormData(this));
-  try {
-    const res = await fetch('/.netlify/functions/insert_project', {
-      method: 'POST',
-      body: JSON.stringify(formData)
+      const downAmount = (down / 100) * finalPrice;
+      const confirmAmount = (confirm / 100) * finalPrice;
+      const possessionAmount = (possession / 100) * finalPrice;
+      const balloonCount = balloonType === "quarterly" ? Math.floor(months / 3) : Math.floor(months / 6);
+      const balloonTotal = finalPrice * 0.2;
+      const balloonPer = balloonCount > 0 ? balloonTotal / balloonCount : 0;
+      const remaining = finalPrice - (downAmount + confirmAmount + possessionAmount + balloonTotal);
+      const monthly = months ? remaining / months : 0;
+
+      $('#downAmount').text(`PKR ${downAmount.toLocaleString()}`);
+      $('#confirmAmount').text(`PKR ${confirmAmount.toLocaleString()}`);
+      $('#possessionAmount').text(`PKR ${possessionAmount.toLocaleString()}`);
+      $('#balloonInfo').text(`${balloonCount} ${balloonType} payments of PKR ${balloonPer.toLocaleString()}`);
+      $('#installmentInfo').text(`${months} monthly installments of PKR ${monthly.toLocaleString()}`);
+    }
+
+    function renderPriceInputs() {
+      const type = $('#propertyType').val();
+      const container = $('#priceFields');
+      container.html('');
+      if (type === 'townhouses') {
+        container.html(`
+          <label>Price - Ground Floor</label><input type="number">
+          <label>Price - First Floor</label><input type="number">
+          <label>Price - Second Floor</label><input type="number">
+        `);
+      } else if (type === 'apartments') {
+        container.html(`
+          <label>Studio</label><input type="number">
+          <label>1 Bed</label><input type="number">
+          <label>2 Bed</label><input type="number">
+          <label>3 Bed</label><input type="number">
+          <label>4 Bed</label><input type="number">
+          <label>Penthouse</label><input type="number">
+        `);
+      } else {
+        container.html(`
+          <label>Price Per Sq Ft / Marla</label><input type="number" id="pricePerUnit">
+          <label>Plot/Unit Size</label><input type="number" id="unitSize">
+          <p id="totalPlotPrice">Total Price: PKR 0</p>
+        `);
+        $('#pricePerUnit, #unitSize').on('input', calculatePlan);
+      }
+    }
+
+    function handleProjectTypeChange() {
+      const type = $('#projectType').val();
+      const show = type === 'offplan' || type === 'ready';
+      $('#propertyTypeWrap').toggle(show);
+      $('#paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType').closest('label, p').toggle(show);
+      renderPriceInputs();
+    }
+
+    $('#projectForm').on('submit', async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const data = {};
+      formData.forEach((val, key) => data[key] = val);
+      await saveProjectToDB(data);
+      this.reset();
+      loadProjects();
     });
-    const json = await res.json();
-    alert(json.success ? "✅ Project saved!" : "❌ Failed");
-    this.reset();
-    loadProjects();
-  } catch (err) {
-    alert("Error saving project.");
-    console.log(err);
-  }
-});
 
-// --- Load Projects Table ---
-function loadProjects() {
-  fetch('/.netlify/functions/get_projects')
-    .then(res => res.json())
-    .then(data => {
-      const table = $('#projectsTable');
-      if (!Array.isArray(data)) return table.html("No data found.");
-      table.html(`
-        <table>
-          <tr><th>Name</th><th>Type</th><th>Price</th><th>Discount</th><th>Location</th></tr>
-          ${data.map(p => `
-            <tr>
-              <td>${p.project_name}</td>
-              <td>${p.project_type} - ${p.property_type}</td>
-              <td>PKR ${Number(p.asking_price).toLocaleString()}</td>
-              <td>${p.discount_type} ${p.discount_value}</td>
-              <td><a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank">📍</a></td>
-            </tr>`).join('')}
-        </table>
-      `);
+    $(document).ready(() => {
+      handleProjectTypeChange();
+      $('#projectType').on('change', handleProjectTypeChange);
+      $('#propertyType').on('change', renderPriceInputs);
+      $('#askingPrice, #discountType, #discountValue, #paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType')
+        .on('input change', calculatePlan);
+      loadProjects();
     });
-}
+  </script>
 
-// --- Init ---
-$(function () {
-  handleProjectTypeChange();
-  $('#projectType').on('change', handleProjectTypeChange);
-  $('#propertyType').on('change', renderPriceInputs);
-  $('#askingPrice, #discountType, #discountValue, #paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType')
-    .on('input change', calculatePlan);
-  loadProjects();
-});
-</script>
+  <!-- ✅ Google Maps Loader -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZCfSQ2PbNb29TERz29btybMqxJajlC8&libraries=places&callback=initMap">
+  </script>
+  <script>
+    function initMap() {
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 31.5204, lng: 74.3587 },
+        zoom: 12
+      });
 
+      const input = document.getElementById("locationInput");
+      const searchBox = new google.maps.places.SearchBox(input);
+      map.addListener("bounds_changed", () => {
+        searchBox.setBounds(map.getBounds());
+      });
+
+      let marker;
+      searchBox.addListener("places_changed", () => {
+        const places = searchBox.getPlaces();
+        if (!places.length) return;
+        const place = places[0];
+        if (!place.geometry) return;
+
+        if (marker) marker.setMap(null);
+        marker = new google.maps.Marker({
+          map,
+          position: place.geometry.location
+        });
+
+        document.getElementById("latitude").value = place.geometry.location.lat();
+        document.getElementById("longitude").value = place.geometry.location.lng();
+        map.setCenter(place.geometry.location);
+        map.setZoom(15);
+      });
+    }
+  </script>
 </body>
 </html>
