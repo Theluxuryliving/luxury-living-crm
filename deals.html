@@ -3,89 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <title>Deals - Luxury Living CRM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f8f8f8;
-      margin: 0;
-      color: #000;
-    }
-    .navbar {
-      background: #000;
-      padding: 15px;
-      text-align: center;
-      border-bottom: 1px solid #FFD700;
-    }
-    .navbar a {
-      color: #FFD700;
-      text-decoration: none;
-      margin: 0 15px;
-      font-weight: bold;
-    }
-    .container {
-      padding: 20px;
-    }
+    body { font-family: 'Poppins', sans-serif; background: #f8f8f8; margin: 0; color: #000; }
+    .navbar { background: #000; padding: 15px; text-align: center; border-bottom: 1px solid #FFD700; }
+    .navbar a { color: #FFD700; text-decoration: none; margin: 0 15px; font-weight: bold; }
+    .container { padding: 20px; }
     .form-card, .deal-card {
-      background: #fff;
-      border: 1px solid #FFD700;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
+      background: #fff; border: 1px solid #FFD700; border-radius: 10px; padding: 20px; margin-bottom: 30px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
-    h2, h3 {
-      color: #000;
-      border-bottom: 2px solid #FFD700;
-      padding-bottom: 5px;
-    }
+    h2, h3 { color: #000; border-bottom: 2px solid #FFD700; padding-bottom: 5px; }
     input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      background: #fff;
-      color: #000;
+      width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #000;
     }
     button {
-      background: #000;
-      color: #FFD700;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: transform 0.2s;
+      background: #000; color: #FFD700; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold;
+      cursor: pointer; margin-top: 10px; transition: transform 0.2s;
     }
-    button:hover {
-      transform: scale(1.05);
-    }
+    button:hover { transform: scale(1.05); }
     .breakdown-box {
-      background: #f8f8f8;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-      border: 1px dashed #FFD700;
+      background: #f8f8f8; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed #FFD700;
     }
-    .filter-bar {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     .stage-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: gold;
-      color: black;
-      font-weight: bold;
-      font-size: 12px;
-      margin-left: 5px;
+      display: inline-block; padding: 4px 10px; border-radius: 12px; background: gold; color: black;
+      font-weight: bold; font-size: 12px; margin-left: 5px;
     }
   </style>
 </head>
@@ -98,6 +44,7 @@
     <a href="documents.html">📁 Documents</a>
     <a href="reports.html">📈 Reports</a>
   </div>
+
   <div class="container">
     <div class="form-card">
       <h3>Create Deal</h3>
@@ -150,8 +97,8 @@
         <label>Balance Payment:</label>
         <input type="number" name="balance_payment" id="balancePayment" readonly />
 
-        <label>Balance Payment Due Date:</label>
-        <input type="date" name="balance_payment_due" id="balancePaymentDue" />
+        <label>Balance Due Date:</label>
+        <input type="date" name="balance_due_date" id="balanceDueDate" required />
 
         <div class="breakdown-box" id="paymentBreakdown" style="display:none"></div>
 
@@ -186,129 +133,147 @@
       <div id="dealsList"></div>
     </div>
   </div>
-<script>
-const dbDeals = new PouchDB('crm_deals');
-const dbLeads = new PouchDB('crm_leads');
-const dbInventory = new PouchDB('crm_inventory');
-const dbProjects = new PouchDB('crm_projects');
-const dbUsers = new PouchDB('crm_users');
-let projectMap = {};
 
-async function loadOptions() {
-  const [leadRes, unitRes, userRes, projectRes] = await Promise.all([
-    dbLeads.allDocs({ include_docs: true }),
-    dbInventory.allDocs({ include_docs: true }),
-    dbUsers.allDocs({ include_docs: true }),
-    dbProjects.allDocs({ include_docs: true })
-  ]);
+  <script>
+    const dbDeals = new PouchDB('crm_deals');
+    const dbLeads = new PouchDB('crm_leads');
+    const dbInventory = new PouchDB('crm_inventory');
+    const dbProjects = new PouchDB('crm_projects');
+    const dbUsers = new PouchDB('crm_users');
+    let projectMap = {};
 
-  document.getElementById('leadSelect').innerHTML = leadRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`).join('');
-  document.getElementById('unitSelect').innerHTML = unitRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number} - ${r.doc.unit_type}</option>`).join('');
-  document.getElementById('projectSelect').innerHTML = projectRes.rows.map(r => {
-    projectMap[r.doc._id] = r.doc;
-    return `<option value="${r.doc._id}">${r.doc.name}</option>`;
-  }).join('');
+    async function loadOptions() {
+      const [leadRes, unitRes, userRes, projectRes] = await Promise.all([
+        dbLeads.allDocs({ include_docs: true }),
+        dbInventory.allDocs({ include_docs: true }),
+        dbUsers.allDocs({ include_docs: true }),
+        dbProjects.allDocs({ include_docs: true })
+      ]);
 
-  const primaryAgent = document.getElementById('primaryAgent');
-  const secondaryAgent = document.getElementById('secondaryAgent');
-  userRes.rows.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.doc.name;
-    opt.textContent = r.doc.name;
-    primaryAgent.appendChild(opt.cloneNode(true));
-    secondaryAgent.appendChild(opt.cloneNode(true));
-  });
-}
+      document.getElementById('leadSelect').innerHTML = leadRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`).join('');
+      document.getElementById('unitSelect').innerHTML = unitRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number} - ${r.doc.unit_type}</option>`).join('');
+      document.getElementById('projectSelect').innerHTML = projectRes.rows.map(r => {
+        projectMap[r.doc._id] = r.doc;
+        return `<option value="${r.doc._id}">${r.doc.name}</option>`;
+      }).join('');
 
-function calculateFinalPrice() {
-  const sale = parseFloat(document.getElementById('salePrice').value) || 0;
-  const discount = parseFloat(document.getElementById('discount').value) || 0;
-  const paymentReceived = parseFloat(document.getElementById('paymentReceived').value) || 0;
-  const final = sale - discount;
-  document.getElementById('finalPrice').value = final >= 0 ? final : 0;
+      userRes.rows.forEach(r => {
+        ['primaryAgent', 'secondaryAgent'].forEach(id => {
+          const opt = document.createElement('option');
+          opt.value = r.doc.name;
+          opt.textContent = r.doc.name;
+          document.getElementById(id).appendChild(opt.cloneNode(true));
+        });
+      });
+    }
 
-  const projectType = document.getElementById('projectType').value;
-  const dueField = document.getElementById('paymentDue');
-  dueField.value = (projectType === 'Offplan') ? ((final * 0.10).toFixed(0)) : final;
-  document.getElementById('balancePayment').value = dueField.value - paymentReceived;
-}
+    function calculateFinalPrice() {
+      const sale = parseFloat(document.getElementById('salePrice').value) || 0;
+      const discount = parseFloat(document.getElementById('discount').value) || 0;
+      const final = Math.max(sale - discount, 0);
+      document.getElementById('finalPrice').value = final;
 
-document.getElementById('projectSelect').addEventListener('change', function () {
-  const selected = this.options[this.selectedIndex];
-  const id = selected.value;
-  const proj = projectMap[id] || {};
+      const projectType = document.getElementById('projectType').value;
+      const paymentDue = (projectType === 'Offplan') ? final * 0.3 : final;
+      document.getElementById('paymentDue').value = paymentDue.toFixed(0);
 
-  document.getElementById('projectType').value = proj.project_type || '';
-  document.getElementById('propertyType').value = proj.property_type || '';
-  document.getElementById('paymentTerm').value = proj.payment_term || '';
-  document.getElementById('salePrice').value = proj.price || 0;
-  document.getElementById('commission').value = proj.commission || 0;
-  calculateFinalPrice();
+      const received = parseFloat(document.getElementById('paymentReceived').value) || 0;
+      document.getElementById('balancePayment').value = Math.max(paymentDue - received, 0);
+    }
 
-  if (proj.project_type === 'Offplan' && proj.down_payment && proj.confirmation && proj.possession) {
-    const fp = parseFloat(document.getElementById('finalPrice').value) || 0;
-    const dp = (fp * proj.down_payment / 100).toFixed(0);
-    const conf = (fp * proj.confirmation / 100).toFixed(0);
-    const pos = (fp * proj.possession / 100).toFixed(0);
-    document.getElementById('paymentBreakdown').innerHTML = `
-      <b>Down Payment:</b> PKR ${dp}<br>
-      <b>Confirmation:</b> PKR ${conf}<br>
-      <b>Possession:</b> PKR ${pos}<br>
-      <i>(Balloon/Installments calculated later based on payment term)</i>`;
-    document.getElementById('paymentBreakdown').style.display = 'block';
-  } else {
-    document.getElementById('paymentBreakdown').style.display = 'none';
-  }
-});
-
-document.getElementById('discount').addEventListener('input', calculateFinalPrice);
-document.getElementById('paymentReceived').addEventListener('input', calculateFinalPrice);
-
-document.getElementById('dealForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const doc = {};
-  formData.forEach((val, key) => doc[key] = val);
-  doc._id = new Date().toISOString();
-  await dbDeals.put(doc);
-
-  try {
-    await fetch('/.netlify/functions/insert_deal', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(doc)
+    document.getElementById('projectSelect').addEventListener('change', function () {
+      const proj = projectMap[this.value] || {};
+      document.getElementById('projectType').value = proj.project_type || '';
+      document.getElementById('propertyType').value = proj.property_type || '';
+      document.getElementById('paymentTerm').value = proj.payment_term || '';
+      document.getElementById('salePrice').value = proj.price || 0;
+      document.getElementById('commission').value = proj.commission || 0;
+      calculateFinalPrice();
     });
-  } catch (err) {
-    console.error("Sync to Neon failed", err);
-  }
 
-  e.target.reset();
-  loadDeals();
-});
+    ['discount', 'paymentReceived'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateFinalPrice);
+    });
 
-async function loadDeals() {
-  const statusFilter = document.getElementById('statusFilter').value;
-  const res = await dbDeals.allDocs({ include_docs: true });
-  const list = document.getElementById('dealsList');
-  list.innerHTML = '';
-  res.rows.forEach(row => {
-    const d = row.doc;
-    if (statusFilter && d.status !== statusFilter) return;
-    list.innerHTML += `
-      <div class="form-card">
-        <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
-        <b>Commission:</b> PKR ${d.commission} | <b>Project:</b> ${d.project_id} | 
-        <b>Status:</b> ${d.status || 'open'}<span class="stage-badge">${d.status}</span><br>
-        <b>Final Price:</b> ${d.final_price || 'N/A'} | <b>Discount:</b> ${d.discount || '0'}<br>
-        <b>Payment Due:</b> ${d.payment_due || '0'} | <b>Received:</b> ${d.payment_received || '0'}<br>
-        <b>Balance:</b> ${d.balance_payment || '0'} | <b>Due Date:</b> ${d.balance_payment_due || 'N/A'}
-      </div>`;
-  });
-}
+    document.getElementById('dealForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const doc = {};
+      formData.forEach((val, key) => doc[key] = val);
+      doc._id = new Date().toISOString();
+      await dbDeals.put(doc);
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadOptions().then(loadDeals);
-});
-</script>
+      try {
+        await fetch('/.netlify/functions/insert_deal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doc)
+        });
+      } catch (err) {
+        console.error("Sync to Neon failed", err);
+      }
+
+      e.target.reset();
+      loadDeals();
+    });
+
+    async function loadDeals() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      const res = await dbDeals.allDocs({ include_docs: true });
+      const list = document.getElementById('dealsList');
+      list.innerHTML = '';
+      res.rows.forEach(row => {
+        const d = row.doc;
+        if (statusFilter && d.status !== statusFilter) return;
+        list.innerHTML += `
+          <div class="form-card">
+            <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
+            <b>Commission:</b> PKR ${d.commission} | <b>Project:</b> ${d.project_id} |
+            <b>Status:</b> ${d.status || 'open'}<span class="stage-badge">${d.status}</span><br>
+            <b>Final Price:</b> ${d.final_price || 'N/A'} | <b>Discount:</b> ${d.discount || '0'}<br>
+            <b>Payment Due:</b> PKR ${d.payment_due} | <b>Received:</b> PKR ${d.payment_received} | <b>Balance:</b> PKR ${d.balance_payment}<br>
+            <b>Due Date:</b> ${d.balance_due_date || 'N/A'}<br>
+            <button onclick="downloadInvoice('${d._id}')">📄 Download Invoice</button>
+            <button onclick="deleteDeal('${d._id}')">❌ Delete</button>
+          </div>`;
+      });
+    }
+
+    async function deleteDeal(id) {
+      const doc = await dbDeals.get(id);
+      await dbDeals.remove(doc);
+      loadDeals();
+    }
+
+    async function downloadInvoice(dealId) {
+      const deal = await dbDeals.get(dealId);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const project = projectMap[deal.project_id] || {};
+      const unit = await dbInventory.get(deal.unit_id).catch(() => ({}));
+      const lead = await dbLeads.get(deal.lead_id).catch(() => ({ Name: deal.lead_id }));
+
+      doc.setFontSize(18);
+      doc.text("Luxury Living - Deal Invoice", 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Invoice ID: ${deal._id}`, 20, 30);
+      doc.text(`Client: ${lead.Name}`, 20, 40);
+      doc.text(`Project: ${project.name || deal.project_id}`, 20, 50);
+      doc.text(`Unit: ${unit.unit_number || deal.unit_id}`, 20, 60);
+      doc.text(`Property Type: ${unit.unit_type || ''}`, 20, 70);
+      doc.text(`Payment Term: ${project.payment_term || ''} months`, 20, 80);
+      doc.text(`Primary Agent: ${deal.primary_agent}`, 20, 90);
+      doc.text(`Status: ${deal.status}`, 20, 100);
+      doc.text(`Sale Price: PKR ${deal.sale_price}`, 20, 110);
+      doc.text(`Discount: PKR ${deal.discount}`, 20, 120);
+      doc.text(`Final Price: PKR ${deal.final_price}`, 20, 130);
+      doc.text(`Commission: PKR ${deal.commission}`, 20, 140);
+      doc.save(`invoice_${deal._id}.pdf`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadOptions().then(loadDeals);
+    });
+  </script>
 </body>
 </html>
