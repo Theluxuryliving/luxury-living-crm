@@ -1,295 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Projects - Luxury Living CRM</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <style>
-    :root {
-      --black: #000000;
-      --gold: #FFD700;
-      --chalk: #fdfdfd;
-    }
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--chalk);
-      margin: 0;
-    }
-    nav {
-      background-color: var(--black);
-      color: var(--gold);
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    nav .nav-links a {
-      color: var(--gold);
-      text-decoration: none;
-      margin-left: 18px;
-      font-weight: 500;
-      font-size: 14px;
-    }
-    .container {
-      margin: 30px;
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    h2 {
-      color: var(--black);
-      border-bottom: 2px solid var(--gold);
-      padding-bottom: 6px;
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: 500;
-      display: block;
-      margin-top: 12px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: var(--black);
-      color: var(--gold);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-<nav>
-  <div><strong>The Luxury Living</strong></div>
-  <div class="nav-links">
-    <a href="dashboard.html">📊 Dashboard</a>
-    <a href="leads.html">👥 Leads</a>
-    <a href="calendar.html">📅 Calendar</a>
-    <a href="inventory.html">📦 Inventory</a>
-    <a href="sales.html">🔁 Sales Flow</a>
-    <a href="deals.html">🤝 Deals</a>
-    <a href="documents.html">📁 Documents</a>
-  </div>
-</nav>
-<div class="container">
-  <h2>Add New Project</h2>
-  <form id="projectForm">
-    <label>Project Name</label>
-    <input type="text" name="project_name" required>
+const { Client } = require('pg');
 
-    <label>Developer / Owner Name</label>
-    <input type="text" name="developer" required>
-
-    <label>Project Location (Google Maps URL)</label>
-    <input type="url" name="location_url" placeholder="https://maps.google.com/..." />
-
-    <label>Project Type</label>
-    <select id="projectType" name="project_type">
-      <option value="offplan">Offplan</option>
-      <option value="ready">Ready to Move</option>
-      <option value="sell">To Sell</option>
-      <option value="rent">To Rent</option>
-    </select>
-
-    <div id="propertyTypeWrap">
-      <label>Property Type</label>
-      <select id="propertyType" name="property_type">
-        <option value="townhouses">Town Houses</option>
-        <option value="apartments">Apartments</option>
-        <option value="residential_plots">Residential Plots</option>
-        <option value="commercial_plaza">Commercial Plaza</option>
-        <option value="commercial_plots">Commercial Plots</option>
-        <option value="commercial_shops">Commercial Shops</option>
-        <option value="hotel_apartments">Hotel Apartments</option>
-      </select>
-    </div>
-
-    <div id="priceFields"></div>
-
-    <label>Asking Price</label>
-    <input type="number" id="askingPrice" name="asking_price">
-
-    <label>Discount Type</label>
-    <select id="discountType" name="discount_type">
-      <option value="none">None</option>
-      <option value="percent">Percentage</option>
-      <option value="fixed">Fixed (PKR)</option>
-    </select>
-
-    <label>Discount Value</label>
-    <input type="number" id="discountValue" name="discount_value">
-    <p id="finalPriceDisplay">PKR 0</p>
-
-    <label>Payment Time (Months)</label>
-    <input type="number" id="paymentTime" name="payment_time">
-
-    <label>Down Payment (%)</label>
-    <input type="number" id="downPercent" name="down_payment_percent">
-    <p id="downAmount"></p>
-
-    <label>Confirmation (%)</label>
-    <input type="number" id="confirmPercent" name="confirmation_percent">
-    <p id="confirmAmount"></p>
-
-    <label>Possession (%)</label>
-    <input type="number" id="possessionPercent" name="possession_percent">
-    <p id="possessionAmount"></p>
-
-    <label>Balloon Type</label>
-    <select id="balloonType" name="balloon_type">
-      <option value="quarterly">Quarterly</option>
-      <option value="biannual">Biannual</option>
-    </select>
-    <p id="balloonInfo"></p>
-    <p id="installmentInfo"></p>
-
-    <label>Commission Type</label>
-    <select name="commission_type">
-      <option value="percent">Percentage</option>
-      <option value="fixed">Fixed</option>
-    </select>
-
-    <label>Commission Value</label>
-    <input type="number" name="commission_value">
-
-    <label>Commission Rules</label>
-    <textarea name="commission_rules"></textarea>
-
-    <label>Banking Details</label>
-    <textarea name="banking_details"></textarea>
-
-    <button type="submit">Save Project</button>
-  </form>
-</div>
-
-<script>
-const dbProjects = new PouchDB('crm_projects');
-
-document.getElementById('projectForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const doc = {};
-  formData.forEach((val, key) => doc[key] = val);
-  doc._id = new Date().toISOString();
-  doc.created_at = new Date().toISOString();
-
-  await dbProjects.put(doc);
-
+exports.handler = async (event) => {
   try {
-    await fetch('/.netlify/functions/insert_project', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(doc)
+    const data = JSON.parse(event.body);
+
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
     });
+
+    await client.connect();
+
+    const query = `
+      INSERT INTO crm_projects (
+        project_name, developer, project_type, property_type, asking_price,
+        discount_type, discount_value, payment_time, down_percent, confirm_percent,
+        possession_percent, balloon_type, commission_type, commission_value,
+        commission_rules, banking_details, latitude, longitude, created_at
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, CURRENT_TIMESTAMP
+      )
+    `;
+
+    const values = [
+      data.project_name,
+      data.developer,
+      data.projectType,
+      data.propertyType,
+      data.askingPrice,
+      data.discountType,
+      data.discountValue,
+      data.paymentTime,
+      data.downPercent,
+      data.confirmPercent,
+      data.possessionPercent,
+      data.balloonType,
+      data.commission_type,
+      data.commission_value,
+      data.commission_rules,
+      data.banking_details,
+      data.latitude,
+      data.longitude
+    ];
+
+    await client.query(query, values);
+    await client.end();
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, message: "✅ Project saved to Neon DB" })
+    };
   } catch (err) {
-    console.warn("MySQL sync failed:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
   }
-
-  alert("✅ Project saved successfully.");
-  this.reset();
-});
-
-function calculatePlan() {
-  const unitPrice = parseFloat(document.getElementById('askingPrice')?.value || 0);
-  const discountType = document.getElementById('discountType')?.value || 'none';
-  const discountValue = parseFloat(document.getElementById('discountValue')?.value || 0);
-  let finalPrice = unitPrice;
-
-  if (discountType === 'percent') finalPrice -= (unitPrice * discountValue / 100);
-  else if (discountType === 'fixed') finalPrice -= discountValue;
-
-  document.getElementById('finalPriceDisplay').textContent = `PKR ${finalPrice.toLocaleString()}`;
-
-  const pricePerUnit = parseFloat(document.getElementById('pricePerUnit')?.value || 0);
-  const unitSize = parseFloat(document.getElementById('unitSize')?.value || 0);
-  let total = pricePerUnit * unitSize;
-  if (discountType === 'percent') total -= (total * discountValue / 100);
-  if (discountType === 'fixed') total -= discountValue;
-  if (!isNaN(total) && document.getElementById('totalPlotPrice'))
-    document.getElementById('totalPlotPrice').textContent = `Total Price: PKR ${total.toLocaleString()}`;
-
-  const months = parseInt(document.getElementById('paymentTime')?.value || 0);
-  const down = parseFloat(document.getElementById('downPercent')?.value || 0);
-  const confirm = parseFloat(document.getElementById('confirmPercent')?.value || 0);
-  const possession = parseFloat(document.getElementById('possessionPercent')?.value || 0);
-
-  const downAmount = (down / 100) * finalPrice;
-  const confirmAmount = (confirm / 100) * finalPrice;
-  const possessionAmount = (possession / 100) * finalPrice;
-
-  const balloonType = document.getElementById('balloonType')?.value;
-  let balloonCount = balloonType === 'quarterly' ? Math.floor(months / 3) : Math.floor(months / 6);
-  const balloonTotal = finalPrice * 0.2;
-  const balloonPer = balloonCount > 0 ? balloonTotal / balloonCount : 0;
-
-  const remainingAmount = finalPrice - (downAmount + confirmAmount + possessionAmount + balloonTotal);
-  const monthlyInstallment = months > 0 ? remainingAmount / months : 0;
-
-  document.getElementById('downAmount').textContent = `PKR ${downAmount.toLocaleString()}`;
-  document.getElementById('confirmAmount').textContent = `PKR ${confirmAmount.toLocaleString()}`;
-  document.getElementById('possessionAmount').textContent = `PKR ${possessionAmount.toLocaleString()}`;
-  document.getElementById('balloonInfo').textContent = `${balloonCount} ${balloonType} payments of PKR ${balloonPer.toLocaleString()}`;
-  document.getElementById('installmentInfo').textContent = `${months} monthly installments of PKR ${monthlyInstallment.toLocaleString()}`;
-}
-
-function renderPriceInputs() {
-  const type = document.getElementById('propertyType')?.value;
-  const container = document.getElementById('priceFields');
-  if (!container) return;
-  container.innerHTML = '';
-  if (type === 'townhouses') {
-    container.innerHTML = `
-      <label>Price - Ground Floor</label><input type="number">
-      <label>Price - First Floor</label><input type="number">
-      <label>Price - Second Floor</label><input type="number">
-    `;
-  } else if (type === 'apartments') {
-    container.innerHTML = `
-      <label>Studio</label><input type="number">
-      <label>1 Bed</label><input type="number">
-      <label>2 Bed</label><input type="number">
-      <label>3 Bed</label><input type="number">
-      <label>4 Bed</label><input type="number">
-      <label>Penthouse</label><input type="number">
-    `;
-  } else {
-    container.innerHTML = `
-      <label>Price Per Sq Ft / Marla</label><input type="number" id="pricePerUnit">
-      <label>Plot/Unit Size</label><input type="number" id="unitSize">
-      <p id="totalPlotPrice">Total Price: PKR 0</p>
-    `;
-  }
-  $('#pricePerUnit, #unitSize').on('input', calculatePlan);
-}
-
-function handleProjectTypeChange() {
-  const type = $('#projectType').val();
-  const showProperty = type === 'offplan' || type === 'ready';
-  $('#propertyTypeWrap').toggle(showProperty);
-  $('#paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType').closest('label, p').toggle(showProperty);
-  renderPriceInputs();
-}
-
-$(document).ready(() => {
-  handleProjectTypeChange();
-  $('#projectType').on('change', handleProjectTypeChange);
-  $('#propertyType').on('change', renderPriceInputs);
-  $('#askingPrice, #discountType, #discountValue, #paymentTime, #downPercent, #confirmPercent, #possessionPercent, #balloonType')
-    .on('input change', calculatePlan);
-});
-</script>
-
-</body>
-</html>
+};
