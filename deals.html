@@ -49,75 +49,104 @@
     <div class="form-card">
       <h3>Create Deal</h3>
       <form id="dealForm">
-        <label>Lead:</label>
-        <select name="lead_id" id="leadSelect" required></select>
-
-        <label>Project:</label>
-        <select name="project_id" id="projectSelect" required></select>
-
-        <label>Unit:</label>
-        <select name="unit_id" id="unitSelect" required></select>
-
-        <label>Project Type:</label>
-        <input type="text" name="project_type" id="projectType" readonly />
-
-        <label>Property Type:</label>
-        <input type="text" name="property_type" id="propertyType" readonly />
-
-        <label>Payment Term (months):</label>
-        <input type="text" name="payment_term" id="paymentTerm" readonly />
-
-        <label>Primary Agent:</label>
-        <select name="primary_agent" id="primaryAgent" required></select>
-
-        <label>Secondary Agent (optional):</label>
-        <select name="secondary_agent" id="secondaryAgent"></select>
-
-        <label>Is this an affiliate deal?</label>
-        <select name="is_affiliate" id="isAffiliate">
-          <option value="">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        <label>Sale Price:</label>
-        <input type="number" name="sale_price" id="salePrice" readonly />
-
-        <label>Discount:</label>
-        <input type="number" name="discount" id="discount" value="0" />
-
-        <label>Final Price:</label>
-        <input type="number" name="final_price" id="finalPrice" readonly />
-
-        <label>Payment Due:</label>
-        <input type="number" name="payment_due" id="paymentDue" readonly />
-
-        <label>Payment Received:</label>
-        <input type="number" name="payment_received" id="paymentReceived" value="0" />
-
-        <label>Balance Payment:</label>
-        <input type="number" name="balance_payment" id="balancePayment" readonly />
-
-        <label>Balance Due Date:</label>
-        <input type="date" name="balance_due_date" id="balanceDueDate" required />
-
-        <div class="breakdown-box" id="paymentBreakdown" style="display:none"></div>
-
-        <label>Commission (Total):</label>
-        <input type="number" name="commission" id="commission" readonly />
-
-        <label>Status:</label>
-        <select name="status" required>
-          <option value="open">Open</option>
-          <option value="closed-won">Closed - Won</option>
-          <option value="closed-lost">Closed - Lost</option>
-        </select>
-
-        <label>Notes:</label>
-        <textarea name="notes"></textarea>
-
-        <button type="submit">Save Deal</button>
-      </form>
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Lead:</label>
+      <select name="lead_id" id="leadSelect" required></select>
     </div>
+    <div class="form-group">
+      <label>Project:</label>
+      <select name="project_id" id="projectSelect" required></select>
+    </div>
+    <div class="form-group">
+      <label>Unit:</label>
+      <select name="unit_id" id="unitSelect" required></select>
+    </div>
+
+    <div class="form-group">
+      <label>Project Type:</label>
+      <input type="text" id="projectType" readonly />
+    </div>
+    <div class="form-group">
+      <label>Property Type:</label>
+      <input type="text" id="propertyType" readonly />
+    </div>
+    <div class="form-group">
+      <label>Payment Term (months):</label>
+      <input type="text" id="paymentTerm" readonly />
+    </div>
+
+    <div class="form-group">
+      <label>Primary Agent:</label>
+      <select id="primaryAgent" required></select>
+    </div>
+    <div class="form-group">
+      <label>Secondary Agent (optional):</label>
+      <select id="secondaryAgent"></select>
+    </div>
+    <div class="form-group">
+      <label>Is this an affiliate deal?</label>
+      <select id="isAffiliate">
+        <option value="">No</option>
+        <option value="yes">Yes</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Sale Price:</label>
+      <input type="number" id="salePrice" readonly />
+    </div>
+    <div class="form-group">
+      <label>Discount:</label>
+      <input type="number" id="discount" value="0" />
+    </div>
+    <div class="form-group">
+      <label>Final Price:</label>
+      <input type="number" id="finalPrice" readonly />
+    </div>
+
+    <div class="form-group">
+      <label>Payment Due:</label>
+      <input type="number" id="paymentDue" readonly />
+    </div>
+    <div class="form-group">
+      <label>Payment Received:</label>
+      <input type="number" id="paymentReceived" />
+    </div>
+    <div class="form-group">
+      <label>Balance Payment:</label>
+      <input type="number" id="balancePayment" readonly />
+    </div>
+    <div class="form-group">
+      <label>Balance Payment Due Date:</label>
+      <input type="date" id="balanceDueDate" />
+    </div>
+
+    <div class="form-group">
+      <label>Total Commission:</label>
+      <input type="number" id="commission" readonly />
+    </div>
+
+    <div class="form-group">
+      <label>Status:</label>
+      <select id="status">
+        <option value="open">Open</option>
+        <option value="closed-won">Closed - Won</option>
+        <option value="closed-lost">Closed - Lost</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="grid-column: span 3;">
+      <label>Notes:</label>
+      <textarea id="notes"></textarea>
+    </div>
+  </div>
+
+  <div class="breakdown-box" id="paymentBreakdown" style="display:none; margin-top:15px;"></div>
+
+  <button type="submit">💾 Save Deal</button>
+</form>
+</div>
 
     <div class="deal-card">
       <h3>All Deals</h3>
