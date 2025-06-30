@@ -1,14 +1,26 @@
 const { Client } = require("pg");
 
 exports.handler = async function (event) {
+  console.log("🔔 insert_activity function triggered");
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Method Not Allowed" }),
+      body: JSON.stringify({ error: "Method Not Allowed" })
     };
   }
 
-  const data = JSON.parse(event.body || "{}");
+  let data;
+  try {
+    data = JSON.parse(event.body || "{}");
+    console.log("📦 Received data:", data);
+  } catch (parseError) {
+    console.error("❌ JSON Parse Error:", parseError);
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Invalid JSON body" })
+    };
+  }
 
   const {
     _id,
@@ -21,20 +33,14 @@ exports.handler = async function (event) {
     notes
   } = data;
 
-  if (!_id || !leadId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Missing required fields (_id, leadId)" }),
-    };
-  }
-
   const client = new Client({
     connectionString: process.env.NEON_DB_URL,
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false }
   });
 
   try {
     await client.connect();
+    console.log("✅ Connected to Neon");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS crm_followups (
@@ -48,6 +54,7 @@ exports.handler = async function (event) {
         notes TEXT
       );
     `);
+    console.log("🛠️ Table ensured");
 
     await client.query(`
       INSERT INTO crm_followups (_id, lead_id, agent, type, date, follow_up_date, status, notes)
@@ -61,18 +68,20 @@ exports.handler = async function (event) {
         notes = $8;
     `, [_id, leadId, agent, type, date, followUpDate, status, notes]);
 
+    console.log("✅ Data inserted/updated successfully");
+
     await client.end();
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true }),
+      body: JSON.stringify({ success: true })
     };
 
   } catch (err) {
-    console.error("Insert activity error:", err);
+    console.error("❌ Insert activity error:", err.stack || err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ error: err.stack || err.message })
     };
   }
 };
