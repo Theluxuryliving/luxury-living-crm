@@ -167,6 +167,124 @@
       <div id="dealsList"></div>
     </div>
   </div>
+<script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+<script>
+  const dbDeals = new PouchDB('crm_deals');
+  const dbLeads = new PouchDB('crm_leads');
+  const dbInventory = new PouchDB('crm_inventory');
+  const dbProjects = new PouchDB('crm_projects');
+  const dbUsers = new PouchDB('crm_users');
+  let projectMap = {};
+
+  async function loadOptions() {
+    const [leadRes, unitRes, userRes, projectRes] = await Promise.all([
+      dbLeads.allDocs({ include_docs: true }),
+      dbInventory.allDocs({ include_docs: true }),
+      dbUsers.allDocs({ include_docs: true }),
+      dbProjects.allDocs({ include_docs: true })
+    ]);
+
+    document.getElementById('leadSelect').innerHTML = leadRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`).join('');
+    document.getElementById('unitSelect').innerHTML = unitRes.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number} - ${r.doc.unit_type}</option>`).join('');
+    document.getElementById('projectSelect').innerHTML = projectRes.rows.map(r => {
+      projectMap[r.doc._id] = r.doc;
+      return `<option value="${r.doc._id}">${r.doc.name}</option>`;
+    }).join('');
+
+    const primaryAgent = document.getElementById('primaryAgent');
+    const secondaryAgent = document.getElementById('secondaryAgent');
+    userRes.rows.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.doc.name;
+      opt.textContent = r.doc.name;
+      primaryAgent.appendChild(opt.cloneNode(true));
+      secondaryAgent.appendChild(opt.cloneNode(true));
+    });
+  }
+
+  function calculateFinalPrice() {
+    const sale = parseFloat(document.getElementById('salePrice').value) || 0;
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const final = sale - discount;
+    document.getElementById('finalPrice').value = final >= 0 ? final : 0;
+    document.getElementById('projectSelect').dispatchEvent(new Event('change'));
+  }
+
+  document.getElementById('projectSelect').addEventListener('change', function () {
+    const selected = this.options[this.selectedIndex];
+    const id = selected.value;
+    const proj = projectMap[id] || {};
+
+    document.getElementById('projectType').value = proj.project_type || '';
+    document.getElementById('propertyType').value = proj.property_type || '';
+    document.getElementById('paymentTerm').value = proj.payment_term || '';
+    document.getElementById('salePrice').value = proj.price || 0;
+    document.getElementById('commission').value = proj.commission || 0;
+    calculateFinalPrice();
+
+    if (proj.project_type === 'Offplan' && proj.down_payment && proj.confirmation && proj.possession) {
+      const fp = parseFloat(document.getElementById('finalPrice').value) || 0;
+      const dp = (fp * proj.down_payment / 100).toFixed(0);
+      const conf = (fp * proj.confirmation / 100).toFixed(0);
+      const pos = (fp * proj.possession / 100).toFixed(0);
+      document.getElementById('paymentBreakdown').innerHTML = `
+        <b>Down Payment:</b> PKR ${dp}<br>
+        <b>Confirmation:</b> PKR ${conf}<br>
+        <b>Possession:</b> PKR ${pos}<br>
+        <i>(Balloon/Installments calculated later based on payment term)</i>`;
+      document.getElementById('paymentBreakdown').style.display = 'block';
+    } else {
+      document.getElementById('paymentBreakdown').style.display = 'none';
+    }
+  });
+
+  document.getElementById('discount').addEventListener('input', calculateFinalPrice);
+
+  document.getElementById('dealForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const doc = {};
+    formData.forEach((val, key) => doc[key] = val);
+    doc._id = new Date().toISOString();
+    await dbDeals.put(doc);
+
+    try {
+      await fetch('/.netlify/functions/insert_deal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(doc)
+      });
+    } catch (err) {
+      console.error("Sync to Neon failed", err);
+    }
+
+    e.target.reset();
+    loadDeals();
+  });
+
+  async function loadDeals() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const res = await dbDeals.allDocs({ include_docs: true });
+    const list = document.getElementById('dealsList');
+    list.innerHTML = '';
+    res.rows.forEach(row => {
+      const d = row.doc;
+      if (statusFilter && d.status !== statusFilter) return;
+
+      list.innerHTML += `
+        <div class="form-card">
+          <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
+          <b>Commission:</b> PKR ${d.commission} | <b>Project:</b> ${d.project_id} | 
+          <b>Status:</b> ${d.status || 'open'}<span class="stage-badge">${d.status}</span><br>
+          <b>Final Price:</b> ${d.final_price || 'N/A'} | <b>Discount:</b> ${d.discount || '0'}
+        </div>`;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadOptions().then(loadDeals);
+  });
+</script>
 
   </body>
 </html>
