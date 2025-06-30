@@ -2,56 +2,103 @@ const { Client } = require('pg');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
   }
 
-  const data = JSON.parse(event.body);
+  let data;
+  try {
+    data = JSON.parse(event.body);
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Invalid JSON', detail: err.message }),
+    };
+  }
+
+  const {
+    project_name,
+    developer,
+    projectType,
+    propertyType,
+    askingPrice,
+    discountType,
+    discountValue,
+    paymentTime,
+    downPercent,
+    confirmPercent,
+    possessionPercent,
+    balloonType,
+    commission_type,
+    commission,
+    commission_notes,
+    banking,
+    latitude,
+    longitude,
+  } = data;
 
   const client = new Client({
-    connectionString: process.env.POSTGRES_URL, // Make sure this env variable is set!
-    ssl: { rejectUnauthorized: false }
+    connectionString: process.env.POSTGRES_URL,
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
     await client.connect();
 
     const query = `
-      INSERT INTO projects
-      (name, location, developer, price, commission_type, commission_value,
-       payment_time, down_payment_percent, confirmation_percent,
-       balloon_schedule, balloon_percent, possession_percent)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-      RETURNING id;
+      INSERT INTO projects (
+        name, developer, location, price,
+        commission_type, commission_value,
+        payment_time, down_payment_percent,
+        confirmation_percent, possession_percent,
+        balloon_schedule, balloon_percent,
+        created_at
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6,
+        $7, $8,
+        $9, $10,
+        $11, $12,
+        NOW()
+      )
+      RETURNING id
     `;
 
     const values = [
-      data.project_name,
-      data.location || '',
-      data.developer,
-      parseFloat(data.askingPrice) || 0,
-      data.commission_type,
-      parseFloat(data.commission) || 0,
-      data.paymentTime,
-      parseFloat(data.downPercent) || 0,
-      parseFloat(data.confirmPercent) || 0,
-      data.balloonType || '',
-      20, // assumed 20% balloon by default
-      parseFloat(data.possessionPercent) || 0
+      project_name || null,
+      developer || null,
+      `${latitude},${longitude}` || null,
+      askingPrice ? parseFloat(askingPrice) : null,
+      commission_type || null,
+      commission ? parseFloat(commission) : null,
+      paymentTime || null,
+      downPercent ? parseFloat(downPercent) : null,
+      confirmPercent ? parseFloat(confirmPercent) : null,
+      possessionPercent ? parseFloat(possessionPercent) : null,
+      balloonType || null,
+      20, // hardcoded balloon_percent (from your formula logic)
     ];
 
     const result = await client.query(query, values);
+    const newId = result.rows[0].id;
+
     await client.end();
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, id: result.rows[0].id })
+      body: JSON.stringify({ success: true, projectId: newId }),
     };
 
   } catch (err) {
-    console.error('DB Error:', err);
+    console.error('insert_project error:', err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({
+        error: 'Failed to insert project',
+        detail: err.message,
+      }),
     };
   }
 };
