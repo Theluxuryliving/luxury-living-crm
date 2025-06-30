@@ -139,4 +139,130 @@
   <script>
     const leadsDb = new PouchDB("crm_leads");
     const activityDb = new PouchDB("crm_activities");
-    const calendarDb = new PouchDB
+    const calendarDb = new PouchDB("crm_calendar");
+    const user = localStorage.getItem("repName") || "Unknown";
+
+    async function loadFollowups() {
+      const leadRes = await leadsDb.allDocs({ include_docs: true });
+      const leads = leadRes.rows.map(r => r.doc);
+      const actRes = await activityDb.allDocs({ include_docs: true });
+      const acts = actRes.rows.map(r => r.doc);
+
+      const today = new Date().toISOString().split("T")[0];
+      const statusFilter = document.getElementById("filterStatus").value;
+      const agentFilter = document.getElementById("filterAgent").value;
+      const dateFilter = document.getElementById("filterDate").value;
+      const showOverdue = document.getElementById("showOverdueOnly").checked;
+
+      let html = '';
+      let counts = { pending: 0, done: 0, overdue: 0 };
+      const agentStats = {};
+
+      const agents = [...new Set(leads.map(l => l.assigned_to).filter(Boolean))];
+      $("#filterAgent").html(`<option value="">All Agents</option>` + agents.map(a => `<option value="${a}">${a}</option>`).join(''));
+
+      leads.forEach(lead => {
+        const a = acts.filter(act => act.leadId === lead._id).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const assigned = lead.assigned_to || 'Unassigned';
+        const noAct = !a;
+
+        if (!agentStats[assigned]) agentStats[assigned] = { total: 0, overdue: 0 };
+        agentStats[assigned].total++;
+
+        if (agentFilter && assigned !== agentFilter) return;
+        if (statusFilter && (!a || a.status !== statusFilter)) return;
+        if (dateFilter && (!a || a.followUpDate !== dateFilter)) return;
+
+        let statusClass = '';
+        if (a?.status === "pending" && a.followUpDate < today) {
+          statusClass = "overdue";
+          counts.overdue++;
+          agentStats[assigned].overdue++;
+        } else if (a?.status === "pending" && a.followUpDate === today) {
+          statusClass = "due-today";
+        }
+
+        if (a?.status === "done") counts.done++;
+        if (a?.status === "pending") counts.pending++;
+
+        if (showOverdue && !statusClass) return;
+
+        html += `
+          <div class="followup-card ${statusClass}">
+            <strong>${lead.Name}</strong> (${lead.Phone}) - <em>${assigned}</em>
+            <label>Follow-up Type:
+              <select onchange="update('${lead._id}', 'type', this.value)">
+                <option value="">Select</option>
+                <option ${a?.type === 'Call' ? 'selected' : ''}>Call</option>
+                <option ${a?.type === 'Meeting' ? 'selected' : ''}>Meeting</option>
+                <option ${a?.type === 'WhatsApp' ? 'selected' : ''}>WhatsApp</option>
+                <option ${a?.type === 'Email' ? 'selected' : ''}>Email</option>
+              </select>
+            </label>
+            <label>Date:
+              <input type="date" value="${a?.date || today}" onchange="update('${lead._id}', 'date', this.value)" />
+            </label>
+            <label>Next Follow-up:
+              <input type="date" value="${a?.followUpDate || ''}" onchange="update('${lead._id}', 'followUpDate', this.value)" />
+            </label>
+            <label>Status:
+              <select onchange="update('${lead._id}', 'status', this.value)">
+                <option value="">Select</option>
+                <option value="pending" ${a?.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="done" ${a?.status === 'done' ? 'selected' : ''}>Done</option>
+              </select>
+            </label>
+            <label>Notes:
+              <textarea onchange="update('${lead._id}', 'notes', this.value)">${a?.notes || ''}</textarea>
+            </label>
+          </div>`;
+      });
+
+      $("#followupContainer").html(html);
+      $("#pendingCount").text(counts.pending);
+      $("#doneCount").text(counts.done);
+      $("#overdueCount").text(counts.overdue);
+
+      const agentHtml = Object.entries(agentStats).map(([agent, stat]) => {
+        const percent = stat.total ? ((stat.overdue / stat.total) * 100).toFixed(1) : 0;
+        const style = percent >= 50 ? ' style="color:red;font-weight:bold;"' : '';
+        return `<div${style}>${agent}: ${percent}% overdue (${stat.overdue}/${stat.total})</div>`;
+      }).join('');
+      $("#agentOverdueSummary").html(agentHtml);
+    }
+
+    async function update(leadId, field, value) {
+      const today = new Date().toISOString().split("T")[0];
+      const id = `${leadId}-${today}`;
+      let doc;
+      try {
+        doc = await activityDb.get(id);
+      } catch {
+        doc = { _id: id, leadId, agent: user };
+      }
+      doc[field] = value;
+      doc.date = today;
+
+      await activityDb.put(doc);
+
+      await fetch("/.netlify/functions/insert_activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(doc),
+      });
+
+      calendarDb.put({
+        _id: `cal-${id}`,
+        title: "Follow-up",
+        start: today,
+        description: `${field} updated for lead ${leadId}`,
+        agent: user
+      }).catch(() => {});
+
+      loadFollowups();
+    }
+
+    $(document).ready(loadFollowups);
+  </script>
+</body>
+</html>
