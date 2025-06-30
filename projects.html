@@ -72,12 +72,8 @@
       font-weight: bold;
       color: white;
     }
-    .badge-local {
-      background-color: #ffc107;
-    }
-    .badge-neon {
-      background-color: #28a745;
-    }
+    .badge-local { background-color: #ffc107; }
+    .badge-neon { background-color: #28a745; }
   </style>
 </head>
 <body>
@@ -123,7 +119,6 @@
           <option value="hotel_apartments">Hotel Apartments</option>
         </select>
       </div>
-
       <div id="priceFields"></div>
 
       <label>Asking Price</label>
@@ -186,6 +181,7 @@
 
       <button type="submit">Save Project</button>
     </form>
+
     <h2>📋 Saved Projects</h2>
     <table border="1" width="100%" style="margin-top:20px; border-collapse: collapse;">
       <thead>
@@ -204,7 +200,6 @@
       <tbody id="projectTableBody"></tbody>
     </table>
   </div>
-
   <script>
     const dbProjects = new PouchDB("crm_projects");
 
@@ -253,11 +248,11 @@
         if (Array.isArray(json)) {
           json.forEach((p) => {
             all.push({
-              name: p.name,
+              name: p.project_name || p.name,
               type: p.project_type,
               property: p.property_type || "-",
-              price: p.price,
-              discount: "-",
+              price: p.asking_price || p.price,
+              discount: p.discount_value ? `${p.discount_type} (${p.discount_value})` : "-",
               term: p.payment_time,
               developer: p.developer,
               source: "neon"
@@ -379,11 +374,12 @@
     });
   </script>
 
+  <!-- ✅ Modern Google Maps loader -->
   <script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZCfSQ2PbNb29TERz29btybMqxJajlC8&libraries=places&callback=initMap"
-  async
-  defer
-></script>
+    async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZCfSQ2PbNb29TERz29btybMqxJajlC8&libraries=places&callback=initMap"
+  ></script>
+
   <script>
     function initMap() {
       const map = new google.maps.Map(document.getElementById("map"), {
