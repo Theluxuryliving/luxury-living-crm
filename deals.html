@@ -17,8 +17,13 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     h2, h3 { color: #000; border-bottom: 2px solid #FFD700; padding-bottom: 5px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+    }
     input, select, textarea {
-      width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #000;
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #000;
     }
     button {
       background: #000; color: #FFD700; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold;
@@ -44,109 +49,41 @@
     <a href="documents.html">📁 Documents</a>
     <a href="reports.html">📈 Reports</a>
   </div>
-
   <div class="container">
     <div class="form-card">
       <h3>Create Deal</h3>
       <form id="dealForm">
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Lead:</label>
-      <select name="lead_id" id="leadSelect" required></select>
-    </div>
-    <div class="form-group">
-      <label>Project:</label>
-      <select name="project_id" id="projectSelect" required></select>
-    </div>
-    <div class="form-group">
-      <label>Unit:</label>
-      <select name="unit_id" id="unitSelect" required></select>
-    </div>
+        <div class="form-grid">
+          <div><label>Lead:</label><select name="lead_id" id="leadSelect" required></select></div>
+          <div><label>Project:</label><select name="project_id" id="projectSelect" required></select></div>
+          <div><label>Unit:</label><select name="unit_id" id="unitSelect" required></select></div>
 
-    <div class="form-group">
-      <label>Project Type:</label>
-      <input type="text" id="projectType" readonly />
-    </div>
-    <div class="form-group">
-      <label>Property Type:</label>
-      <input type="text" id="propertyType" readonly />
-    </div>
-    <div class="form-group">
-      <label>Payment Term (months):</label>
-      <input type="text" id="paymentTerm" readonly />
-    </div>
+          <div><label>Project Type:</label><input type="text" id="projectType" readonly /></div>
+          <div><label>Property Type:</label><input type="text" id="propertyType" readonly /></div>
+          <div><label>Payment Term (months):</label><input type="text" id="paymentTerm" readonly /></div>
 
-    <div class="form-group">
-      <label>Primary Agent:</label>
-      <select id="primaryAgent" required></select>
-    </div>
-    <div class="form-group">
-      <label>Secondary Agent (optional):</label>
-      <select id="secondaryAgent"></select>
-    </div>
-    <div class="form-group">
-      <label>Is this an affiliate deal?</label>
-      <select id="isAffiliate">
-        <option value="">No</option>
-        <option value="yes">Yes</option>
-      </select>
-    </div>
+          <div><label>Primary Agent:</label><select id="primaryAgent" required></select></div>
+          <div><label>Secondary Agent (optional):</label><select id="secondaryAgent"></select></div>
+          <div><label>Is this an affiliate deal?</label><select id="isAffiliate"><option value="">No</option><option value="yes">Yes</option></select></div>
 
-    <div class="form-group">
-      <label>Sale Price:</label>
-      <input type="number" id="salePrice" readonly />
-    </div>
-    <div class="form-group">
-      <label>Discount:</label>
-      <input type="number" id="discount" value="0" />
-    </div>
-    <div class="form-group">
-      <label>Final Price:</label>
-      <input type="number" id="finalPrice" readonly />
-    </div>
+          <div><label>Sale Price:</label><input type="number" id="salePrice" readonly /></div>
+          <div><label>Discount:</label><input type="number" id="discount" value="0" /></div>
+          <div><label>Final Price:</label><input type="number" id="finalPrice" readonly /></div>
 
-    <div class="form-group">
-      <label>Payment Due:</label>
-      <input type="number" id="paymentDue" readonly />
-    </div>
-    <div class="form-group">
-      <label>Payment Received:</label>
-      <input type="number" id="paymentReceived" />
-    </div>
-    <div class="form-group">
-      <label>Balance Payment:</label>
-      <input type="number" id="balancePayment" readonly />
-    </div>
-    <div class="form-group">
-      <label>Balance Payment Due Date:</label>
-      <input type="date" id="balanceDueDate" />
-    </div>
+          <div><label>Payment Due:</label><input type="number" id="paymentDue" readonly /></div>
+          <div><label>Payment Received:</label><input type="number" id="paymentReceived" /></div>
+          <div><label>Balance Payment:</label><input type="number" id="balancePayment" readonly /></div>
 
-    <div class="form-group">
-      <label>Total Commission:</label>
-      <input type="number" id="commission" readonly />
+          <div><label>Balance Payment Due Date:</label><input type="date" id="balanceDueDate" /></div>
+          <div><label>Total Commission:</label><input type="number" id="commission" readonly /></div>
+          <div><label>Status:</label><select id="status"><option value="open">Open</option><option value="closed-won">Closed - Won</option><option value="closed-lost">Closed - Lost</option></select></div>
+
+          <div style="grid-column: span 3;"><label>Notes:</label><textarea id="notes"></textarea></div>
+        </div>
+        <div class="breakdown-box" id="paymentBreakdown" style="display:none; margin-top:15px;"></div>
+        <button type="submit">💾 Save Deal</button>
+      </form>
     </div>
-
-    <div class="form-group">
-      <label>Status:</label>
-      <select id="status">
-        <option value="open">Open</option>
-        <option value="closed-won">Closed - Won</option>
-        <option value="closed-lost">Closed - Lost</option>
-      </select>
-    </div>
-
-    <div class="form-group" style="grid-column: span 3;">
-      <label>Notes:</label>
-      <textarea id="notes"></textarea>
-    </div>
-  </div>
-
-  <div class="breakdown-box" id="paymentBreakdown" style="display:none; margin-top:15px;"></div>
-
-  <button type="submit">💾 Save Deal</button>
-</form>
-</div>
 
     <div class="deal-card">
       <h3>All Deals</h3>
@@ -231,7 +168,6 @@
       formData.forEach((val, key) => doc[key] = val);
       doc._id = new Date().toISOString();
       await dbDeals.put(doc);
-
       try {
         await fetch('/.netlify/functions/insert_deal', {
           method: 'POST',
@@ -241,7 +177,6 @@
       } catch (err) {
         console.error("Sync to Neon failed", err);
       }
-
       e.target.reset();
       loadDeals();
     });
