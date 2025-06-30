@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Theluxuryliving/luxury-living-crm#readme",
   "description": "",
   "dependencies": {
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+    "pg": "^8.16.3"
   }
 }
