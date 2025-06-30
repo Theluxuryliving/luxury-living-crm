@@ -203,11 +203,12 @@
   }
 
   function calculateFinalPrice() {
-    const sale = parseFloat(document.getElementById('salePrice').value) || 0;
-    const discount = parseFloat(document.getElementById('discount').value) || 0;
-    const final = sale - discount;
-    document.getElementById('finalPrice').value = final >= 0 ? final : 0;
-    document.getElementById('projectSelect').dispatchEvent(new Event('change'));
+  const sale = parseFloat(document.getElementById('salePrice').value) || 0;
+  const discount = parseFloat(document.getElementById('discount').value) || 0;
+  const final = sale - discount;
+  document.getElementById('finalPrice').value = final >= 0 ? final : 0;
+ }
+
   }
 
   document.getElementById('projectSelect').addEventListener('change', function () {
