@@ -65,6 +65,19 @@
       height: 300px;
       margin-top: 10px;
     }
+    .badge {
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 4px;
+      font-weight: bold;
+      color: white;
+    }
+    .badge-local {
+      background-color: #ffc107;
+    }
+    .badge-neon {
+      background-color: #28a745;
+    }
   </style>
 </head>
 <body>
@@ -77,7 +90,7 @@
       <a href="inventory.html">📦 Inventory</a>
       <a href="sales.html">🔁 Sales Flow</a>
       <a href="deals.html">🤝 Deals</a>
-      <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
+      <a href="documents.html">📁 Documents</a>
     </div>
   </nav>
 
@@ -173,7 +186,6 @@
 
       <button type="submit">Save Project</button>
     </form>
-
     <h2>📋 Saved Projects</h2>
     <table border="1" width="100%" style="margin-top:20px; border-collapse: collapse;">
       <thead>
@@ -186,6 +198,7 @@
           <th>Discount</th>
           <th>Term</th>
           <th>Developer</th>
+          <th>Source</th>
         </tr>
       </thead>
       <tbody id="projectTableBody"></tbody>
@@ -207,26 +220,73 @@
           body: JSON.stringify(data)
         });
       } catch (e) {
-        console.warn("MySQL sync failed", e.message);
+        console.warn("PostgreSQL sync failed", e.message);
       }
     }
 
     async function loadProjects() {
-      const res = await dbProjects.allDocs({ include_docs: true });
       const tbody = document.getElementById("projectTableBody");
-      tbody.innerHTML = res.rows.map((r, i) => {
-        const p = r.doc;
-        return `<tr>
-          <td>${i + 1}</td>
-          <td>${p.project_name}</td>
-          <td>${p.projectType}</td>
-          <td>${p.propertyType}</td>
-          <td>${p.askingPrice}</td>
-          <td>${p.discountType} (${p.discountValue})</td>
-          <td>${p.paymentTime}</td>
-          <td>${p.developer}</td>
-        </tr>`;
-      }).join("");
+      tbody.innerHTML = "";
+
+      let all = [];
+
+      // Load Local (PouchDB)
+      const local = await dbProjects.allDocs({ include_docs: true });
+      local.rows.forEach((row) => {
+        const p = row.doc;
+        all.push({
+          name: p.project_name,
+          type: p.projectType,
+          property: p.propertyType,
+          price: p.askingPrice,
+          discount: `${p.discountType} (${p.discountValue})`,
+          term: p.paymentTime,
+          developer: p.developer,
+          source: "local"
+        });
+      });
+
+      // Load Neon DB
+      try {
+        const remote = await fetch("/.netlify/functions/get_projects");
+        const json = await remote.json();
+        if (Array.isArray(json)) {
+          json.forEach((p) => {
+            all.push({
+              name: p.name,
+              type: p.project_type,
+              property: p.property_type || "-",
+              price: p.price,
+              discount: "-",
+              term: p.payment_time,
+              developer: p.developer,
+              source: "neon"
+            });
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to load from Neon DB", err);
+      }
+
+      all.forEach((p, i) => {
+        const badge = p.source === "neon"
+          ? `<span class="badge badge-neon">Neon DB</span>`
+          : `<span class="badge badge-local">Local</span>`;
+        const row = `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.name}</td>
+            <td>${p.type}</td>
+            <td>${p.property}</td>
+            <td>${p.price}</td>
+            <td>${p.discount}</td>
+            <td>${p.term}</td>
+            <td>${p.developer}</td>
+            <td>${badge}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
     }
 
     function calculatePlan() {
@@ -304,7 +364,6 @@
       const formData = new FormData(this);
       const data = {};
       formData.forEach((val, key) => data[key] = val);
-      data.location = document.getElementById("locationInput").value || "";
       await saveProjectToDB(data);
       this.reset();
       loadProjects();
@@ -320,9 +379,8 @@
     });
   </script>
 
-  <!-- ✅ Google Maps Loader -->
   <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZCfSQ2PbNb29TERz29btybMqxJajlC8&libraries=places&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places&callback=initMap">
   </script>
   <script>
     function initMap() {
