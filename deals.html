@@ -4,224 +4,180 @@
   <meta charset="UTF-8" />
   <title>CRM - Deals & Payments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
       background: #f8f8f8;
       margin: 0;
+      padding: 0;
       color: #000;
     }
-    .navbar {
+    nav {
       background: #000;
-      padding: 15px;
-      text-align: center;
-      border-bottom: 2px solid #FFD700;
-    }
-    .navbar a {
       color: #FFD700;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav .nav-links a {
+      color: #FFD700;
+      margin-left: 16px;
       text-decoration: none;
-      margin: 0 15px;
       font-weight: bold;
     }
     .container {
-      padding: 20px;
-    }
-    .form-card, .deal-card {
+      padding: 30px;
       background: white;
-      border: 1px solid #FFD700;
+      margin: 20px;
       border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
     h2, h3 {
       color: #000;
       border-bottom: 2px solid #FFD700;
-      padding-bottom: 5px;
+      padding-bottom: 6px;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 14px;
     }
     input, select, textarea {
       width: 100%;
       padding: 10px;
-      margin: 10px 0;
-      border-radius: 6px;
+      margin-top: 5px;
+      margin-bottom: 12px;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      background: #fff;
-      color: #000;
     }
     button {
-      background-color: #000;
-      color: #FFD700;
+      background-color: black;
+      color: gold;
       border: none;
-      padding: 12px 20px;
+      padding: 10px 20px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
-      transition: transform 0.2s;
-    }
-    button:hover {
-      transform: scale(1.05);
-    }
-    .breakdown-box {
-      background: #fafafa;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-      border: 1px dashed #FFD700;
-    }
-    .filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <a href="dashboard.html">📊 Dashboard</a>
-    <a href="leads.html">👥 Leads</a>
-    <a href="projects.html">🏗️ Projects</a>
-    <a href="sales.html">🔁 Sales Flow</a>
-    <a href="https://luxurylivingcrm.42web.io/documents.html">📁 Documents</a>
-    <a href="reports.html">📈 Reports</a>
-  </div>
-
+  <nav>
+    <div><strong>Deals Module</strong></div>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="leads.html">Leads</a>
+      <a href="projects.html">Projects</a>
+      <a href="inventory.html">Inventory</a>
+    </div>
+  </nav>
   <div class="container">
-    <div class="form-card">
-      <h3>Create Deal</h3>
-      <form id="dealForm">
-        <!-- Fields (same as before) -->
-        <!-- Submit logic updated below -->
-        <button type="submit">Save Deal</button>
-      </form>
-    </div>
+    <h3>Create New Deal</h3>
+    <form id="dealForm">
+      <label>Lead:</label>
+      <select id="leadSelect" name="lead_id" required></select>
 
-    <div class="deal-card">
-      <h3>All Deals</h3>
-      <div class="filter-bar">
-        <select id="filterStatus"><option value="">All Stages</option><option>open</option><option>closed-won</option><option>closed-lost</option></select>
-        <select id="filterAgent"></select>
-        <input type="date" id="filterFrom" placeholder="From" />
-        <input type="date" id="filterTo" placeholder="To" />
-        <button onclick="loadDeals()">Filter</button>
-      </div>
-      <div id="dealsList"></div>
-    </div>
+      <label>Project:</label>
+      <select id="projectSelect" name="project_id" required></select>
+
+      <label>Unit:</label>
+      <select id="unitSelect" name="unit_id" required></select>
+
+      <label>Primary Agent:</label>
+      <select id="primaryAgent" name="primary_agent" required></select>
+
+      <label>Affiliate Deal?</label>
+      <select name="is_affiliate">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+
+      <label>Sale Price:</label>
+      <input type="number" name="sale_price" id="salePrice" required />
+
+      <label>Discount:</label>
+      <input type="number" name="discount" id="discount" value="0" />
+
+      <label>Final Price:</label>
+      <input type="number" name="final_price" id="finalPrice" readonly />
+
+      <label>Payment in Chunks?</label>
+      <select id="chunkedPayment" name="chunked">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+
+      <label>Next Payment Date:</label>
+      <input type="date" name="next_payment_date" id="nextPaymentDate" />
+
+      <label>Status:</label>
+      <select name="status">
+        <option value="open">Open</option>
+        <option value="closed-won">Closed - Won</option>
+        <option value="closed-lost">Closed - Lost</option>
+      </select>
+
+      <button type="submit">Save Deal</button>
+    </form>
   </div>
 
   <script>
-    const dbDeals = new PouchDB('crm_deals');
     const dbLeads = new PouchDB('crm_leads');
-    const dbInventory = new PouchDB('crm_inventory');
     const dbProjects = new PouchDB('crm_projects');
+    const dbUnits = new PouchDB('crm_inventory');
     const dbUsers = new PouchDB('crm_users');
-    let projectMap = {};
+    const dbDeals = new PouchDB('crm_deals');
 
-    async function loadOptions() {
-      const [leadRes, unitRes, userRes, projectRes] = await Promise.all([
+    async function populateSelects() {
+      const [leads, projects, units, users] = await Promise.all([
         dbLeads.allDocs({ include_docs: true }),
-        dbInventory.allDocs({ include_docs: true }),
-        dbUsers.allDocs({ include_docs: true }),
-        dbProjects.allDocs({ include_docs: true })
+        dbProjects.allDocs({ include_docs: true }),
+        dbUnits.allDocs({ include_docs: true }),
+        dbUsers.allDocs({ include_docs: true })
       ]);
-      // populate selects
+
+      $('#leadSelect').html(leads.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`));
+      $('#projectSelect').html(projects.rows.map(r => `<option value="${r.doc._id}">${r.doc.name}</option>`));
+      $('#unitSelect').html(units.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number}</option>`));
+      $('#primaryAgent').html(users.rows.map(r => `<option value="${r.doc.name}">${r.doc.name}</option>`));
     }
 
-    document.getElementById('dealForm').addEventListener('submit', async e => {
+    $('#discount, #salePrice').on('input', () => {
+      const sale = parseFloat($('#salePrice').val()) || 0;
+      const discount = parseFloat($('#discount').val()) || 0;
+      $('#finalPrice').val(sale - discount);
+    });
+
+    $('#dealForm').on('submit', async function(e) {
       e.preventDefault();
-      const formData = new FormData(e.target);
-      const doc = {};
-      formData.forEach((val, key) => doc[key] = val);
-      doc._id = new Date().toISOString();
+      const formData = new FormData(this);
+      const obj = {};
+      formData.forEach((val, key) => obj[key] = val);
+      obj._id = new Date().toISOString();
+      await dbDeals.put(obj);
 
-      // Affiliate logic
-      const commission = parseFloat(doc.commission || 0);
-      if (doc.is_affiliate === 'yes') {
-        let company_share = 0, affiliate_share = 0;
-        if (commission >= 100000) {
-          company_share = 100000;
-          affiliate_share = commission - 100000;
-        } else {
-          company_share = commission * 0.01;
-          affiliate_share = commission - company_share;
-        }
-        doc.affiliate_split = { commission, company_share, affiliate_share };
-      }
+      await fetch('/.netlify/functions/insert_deal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj)
+      });
 
-      await dbDeals.put(doc);
-      try {
-        await fetch('/.netlify/functions/insert_deal', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(doc)
-        });
-      } catch (err) {
-        console.error("Sync to Neon failed", err);
-      }
-      e.target.reset();
-      loadDeals();
+      // Mark unit as sold
+      const unit = await dbUnits.get(obj.unit_id);
+      unit.status = 'sold';
+      await dbUnits.put(unit);
+
+      alert('Deal saved!');
+      this.reset();
     });
 
-    async function loadDeals() {
-      const res = await dbDeals.allDocs({ include_docs: true });
-      const list = document.getElementById('dealsList');
-      const filterStatus = document.getElementById('filterStatus').value;
-      list.innerHTML = '';
-      for (let row of res.rows) {
-        const d = row.doc;
-        if (filterStatus && d.status !== filterStatus) continue;
-        list.innerHTML += `
-          <div class="form-card">
-            <strong>${d.primary_agent}</strong> - ${d.unit_id}<br>
-            <b>Stage:</b> ${d.status || 'open'} | <b>Final Price:</b> ${d.final_price}<br>
-            <b>Project:</b> ${d.project_id} | <b>Lead:</b> ${d.lead_id}<br>
-            <button onclick="generateInvoice('${encodeURIComponent(JSON.stringify(d))}')">🧾 View Invoice</button>
-          </div>`;
-      }
-    }
-
-    async function generateInvoice(dealData) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const data = JSON.parse(decodeURIComponent(dealData));
-      const logo = new Image();
-      logo.src = '/logo.png';
-      logo.onload = () => {
-        doc.addImage(logo, 'PNG', 150, 10, 40, 15);
-        doc.setFontSize(16);
-        doc.setTextColor(218,165,32);
-        doc.text("Luxury Living - Deal Invoice", 20, 30);
-
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        let y = 40;
-        const fields = [
-          `Deal ID: ${data._id}`,
-          `Lead ID: ${data.lead_id}`,
-          `Project: ${data.project_id}`,
-          `Unit: ${data.unit_id}`,
-          `Agent: ${data.primary_agent}`,
-          data.secondary_agent ? `Co-Agent: ${data.secondary_agent}` : '',
-          `Sale Price: PKR ${data.sale_price}`,
-          `Discount: PKR ${data.discount || 0}`,
-          `Final Price: PKR ${data.final_price}`,
-          `Affiliate: ${data.is_affiliate === 'yes' ? 'Yes' : 'No'}`,
-          `Status: ${data.status}`,
-          data.notes ? `Notes: ${data.notes}` : ''
-        ];
-        fields.forEach(f => { if (f) doc.text(f, 20, y += 10); });
-        doc.save(`Invoice_${data._id}.pdf`);
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      loadOptions().then(loadDeals);
-    });
+    document.addEventListener('DOMContentLoaded', populateSelects);
   </script>
 </body>
 </html>
