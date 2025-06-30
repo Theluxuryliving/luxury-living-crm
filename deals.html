@@ -4,178 +4,184 @@
   <meta charset="UTF-8" />
   <title>CRM - Deals & Payments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: #f8f8f8;
+      background: #0d0d0d;
+      color: white;
       margin: 0;
       padding: 0;
-      color: #000;
     }
-    nav {
-      background: #000;
-      color: #FFD700;
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .navbar {
+      background: #111;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid gold;
     }
-    nav .nav-links a {
-      color: #FFD700;
-      margin-left: 16px;
+    .navbar a {
+      color: gold;
       text-decoration: none;
+      margin: 0 15px;
       font-weight: bold;
     }
     .container {
-      padding: 30px;
-      background: white;
-      margin: 20px;
+      padding: 20px;
+    }
+    .form-card, .deal-card {
+      background: #1a1a1a;
+      border: 1px solid gold;
       border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.05);
     }
     h2, h3 {
-      color: #000;
-      border-bottom: 2px solid #FFD700;
-      padding-bottom: 6px;
-    }
-    label {
-      font-weight: 600;
-      display: block;
-      margin-top: 14px;
+      color: gold;
+      border-bottom: 1px solid gold;
+      padding-bottom: 5px;
     }
     input, select, textarea {
       width: 100%;
       padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 12px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid gold;
+      background: #1a1a1a;
+      color: white;
     }
     button {
-      background-color: black;
-      color: gold;
+      background: linear-gradient(to right, #ffd700, #ffcc00);
+      color: black;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 20px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .breakdown-box {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      border: 1px dashed gold;
+    }
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .stage-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: gold;
+      color: black;
+      font-weight: bold;
+      font-size: 12px;
+      margin-left: 5px;
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div><strong>Deals Module</strong></div>
-    <div class="nav-links">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="leads.html">Leads</a>
-      <a href="projects.html">Projects</a>
-      <a href="inventory.html">Inventory</a>
-    </div>
-  </nav>
-  <div class="container">
-    <h3>Create New Deal</h3>
-    <form id="dealForm">
-      <label>Lead:</label>
-      <select id="leadSelect" name="lead_id" required></select>
-
-      <label>Project:</label>
-      <select id="projectSelect" name="project_id" required></select>
-
-      <label>Unit:</label>
-      <select id="unitSelect" name="unit_id" required></select>
-
-      <label>Primary Agent:</label>
-      <select id="primaryAgent" name="primary_agent" required></select>
-
-      <label>Affiliate Deal?</label>
-      <select name="is_affiliate">
-        <option value="no">No</option>
-        <option value="yes">Yes</option>
-      </select>
-
-      <label>Sale Price:</label>
-      <input type="number" name="sale_price" id="salePrice" required />
-
-      <label>Discount:</label>
-      <input type="number" name="discount" id="discount" value="0" />
-
-      <label>Final Price:</label>
-      <input type="number" name="final_price" id="finalPrice" readonly />
-
-      <label>Payment in Chunks?</label>
-      <select id="chunkedPayment" name="chunked">
-        <option value="no">No</option>
-        <option value="yes">Yes</option>
-      </select>
-
-      <label>Next Payment Date:</label>
-      <input type="date" name="next_payment_date" id="nextPaymentDate" />
-
-      <label>Status:</label>
-      <select name="status">
-        <option value="open">Open</option>
-        <option value="closed-won">Closed - Won</option>
-        <option value="closed-lost">Closed - Lost</option>
-      </select>
-
-      <button type="submit">Save Deal</button>
-    </form>
+  <div class="navbar">
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="leads.html">👥 Leads</a>
+    <a href="projects.html">🏗️ Projects</a>
+    <a href="sales.html">🔁 Sales Flow</a>
+    <a href="documents.html">📁 Documents</a>
+    <a href="reports.html">📈 Reports</a>
   </div>
 
-  <script>
-    const dbLeads = new PouchDB('crm_leads');
-    const dbProjects = new PouchDB('crm_projects');
-    const dbUnits = new PouchDB('crm_inventory');
-    const dbUsers = new PouchDB('crm_users');
-    const dbDeals = new PouchDB('crm_deals');
+  <div class="container">
+    <div class="form-card">
+      <h3>Create Deal</h3>
+      <form id="dealForm">
+        <label>Lead:</label>
+        <select name="lead_id" id="leadSelect" required></select>
 
-    async function populateSelects() {
-      const [leads, projects, units, users] = await Promise.all([
-        dbLeads.allDocs({ include_docs: true }),
-        dbProjects.allDocs({ include_docs: true }),
-        dbUnits.allDocs({ include_docs: true }),
-        dbUsers.allDocs({ include_docs: true })
-      ]);
+        <label>Project:</label>
+        <select name="project_id" id="projectSelect" required></select>
 
-      $('#leadSelect').html(leads.rows.map(r => `<option value="${r.doc._id}">${r.doc.Name}</option>`));
-      $('#projectSelect').html(projects.rows.map(r => `<option value="${r.doc._id}">${r.doc.name}</option>`));
-      $('#unitSelect').html(units.rows.map(r => `<option value="${r.doc._id}">${r.doc.unit_number}</option>`));
-      $('#primaryAgent').html(users.rows.map(r => `<option value="${r.doc.name}">${r.doc.name}</option>`));
-    }
+        <label>Unit:</label>
+        <select name="unit_id" id="unitSelect" required></select>
 
-    $('#discount, #salePrice').on('input', () => {
-      const sale = parseFloat($('#salePrice').val()) || 0;
-      const discount = parseFloat($('#discount').val()) || 0;
-      $('#finalPrice').val(sale - discount);
-    });
+        <label>Project Type:</label>
+        <input type="text" name="project_type" id="projectType" readonly />
 
-    $('#dealForm').on('submit', async function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      const obj = {};
-      formData.forEach((val, key) => obj[key] = val);
-      obj._id = new Date().toISOString();
-      await dbDeals.put(obj);
+        <label>Property Type:</label>
+        <input type="text" name="property_type" id="propertyType" readonly />
 
-      await fetch('/.netlify/functions/insert_deal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      });
+        <label>Payment Term (months):</label>
+        <input type="text" name="payment_term" id="paymentTerm" readonly />
 
-      // Mark unit as sold
-      const unit = await dbUnits.get(obj.unit_id);
-      unit.status = 'sold';
-      await dbUnits.put(unit);
+        <label>Primary Agent:</label>
+        <select name="primary_agent" id="primaryAgent" required></select>
 
-      alert('Deal saved!');
-      this.reset();
-    });
+        <label>Secondary Agent (optional):</label>
+        <select name="secondary_agent" id="secondaryAgent"></select>
+
+        <label>Is this an affiliate deal?</label>
+        <select name="is_affiliate" id="isAffiliate">
+          <option value="">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        <label>Sale Price:</label>
+        <input type="number" name="sale_price" id="salePrice" readonly />
+
+        <label>Discount:</label>
+        <input type="number" name="discount" id="discount" value="0" />
+
+        <label>Final Price:</label>
+        <input type="number" name="final_price" id="finalPrice" readonly />
+
+        <div class="breakdown-box" id="paymentBreakdown" style="display:none"></div>
+
+        <label>Commission (Total):</label>
+        <input type="number" name="commission" id="commission" readonly />
+
+        <label>Status:</label>
+        <select name="status" required>
+          <option value="open">Open</option>
+          <option value="closed-won">Closed - Won</option>
+          <option value="closed-lost">Closed - Lost</option>
+        </select>
+
+        <label>Notes:</label>
+        <textarea name="notes"></textarea>
+
+        <button type="submit">Save Deal</button>
+      </form>
+    </div>
+
+    <div class="deal-card">
+      <h3>All Deals</h3>
+      <div class="filter-bar">
+        <select id="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="closed-won">Closed - Won</option>
+          <option value="closed-lost">Closed - Lost</option>
+        </select>
+        <button onclick="loadDeals()">Apply Filter</button>
+      </div>
+      <div id="dealsList"></div>
+    </div>
+  </div>
+
+  <script src="deals_script.js"></script>
+</body>
+</html>
 
     document.addEventListener('DOMContentLoaded', populateSelects);
   </script>
