@@ -1,5 +1,3 @@
-// netlify/functions/insert_activity.js
-
 const { Client } = require("pg");
 
 exports.handler = async function (event) {
@@ -12,7 +10,6 @@ exports.handler = async function (event) {
 
   const data = JSON.parse(event.body || "{}");
 
-  // Destructure the fields expected from followups.html
   const {
     _id,
     leadId,
@@ -31,12 +28,9 @@ exports.handler = async function (event) {
     };
   }
 
-  // Initialize PostgreSQL client
   const client = new Client({
     connectionString: process.env.NEON_DB_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
@@ -78,8 +72,7 @@ exports.handler = async function (event) {
     console.error("Insert activity error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: err.message }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
 };
-
