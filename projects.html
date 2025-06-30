@@ -379,9 +379,11 @@
     });
   </script>
 
-  <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARZCfSQ2PbNb29TERz29btybMqxJajlC8&libraries=places&callback=initMap">
-  </script>
+  <script
+  src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&libraries=places&callback=initMap"
+  async
+  defer
+></script>
   <script>
     function initMap() {
       const map = new google.maps.Map(document.getElementById("map"), {
@@ -390,7 +392,7 @@
       });
 
       const input = document.getElementById("locationInput");
-      const searchBox = new google.maps.places.SearchBox(input);
+      const searchBox = new google.maps.places.Autocomplete(input);
       map.addListener("bounds_changed", () => {
         searchBox.setBounds(map.getBounds());
       });
